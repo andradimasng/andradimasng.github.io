@@ -1,0 +1,1423 @@
+<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Plantandan · Cek Kesehatan Kebun Sawit dari Satelit, Gratis</title>
+<meta name="description" content="Plantandan: cek kesehatan kebun sawit per kotak 10 meter dari satelit Sentinel-2, gratis, dengan laporan dan konsultasi AI berbahasa lapangan. Program percontohan Barito Utara, Kalimantan Tengah.">
+<meta name="theme-color" content="#1f6b3a">
+<link rel="canonical" href="https://andradimasng.tech/plantandan/">
+<meta property="og:title" content="Plantandan · Dari Langit ke Tandan"><meta property="og:description" content="Cek kesehatan kebun sawitmu dari satelit. Gratis."><meta property="og:url" content="https://andradimasng.tech/plantandan/"><meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='11' fill='%231f6b3a'/%3E%3Cg fill='none' stroke='%23fffdf6' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M20 35V22M20 22c-3-4-8-5-12-3M20 22c3-4 8-5 12-3'/%3E%3C/g%3E%3Ccircle cx='17' cy='25.5' r='2.6' fill='%23e6a417'/%3E%3Ccircle cx='23' cy='25.5' r='2.6' fill='%23e3743a'/%3E%3Ccircle cx='20' cy='29.5' r='2.6' fill='%23c4421d'/%3E%3C/svg%3E">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap">
+<style>/* required styles */
+
+.leaflet-pane,
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-tile-container,
+.leaflet-pane > svg,
+.leaflet-pane > canvas,
+.leaflet-zoom-box,
+.leaflet-image-layer,
+.leaflet-layer {
+	position: absolute;
+	left: 0;
+	top: 0;
+	}
+.leaflet-container {
+	overflow: hidden;
+	}
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow {
+	-webkit-user-select: none;
+	   -moz-user-select: none;
+	        user-select: none;
+	  -webkit-user-drag: none;
+	}
+/* Prevents IE11 from highlighting tiles in blue */
+.leaflet-tile::selection {
+	background: transparent;
+}
+/* Safari renders non-retina tile on retina better with this, but Chrome is worse */
+.leaflet-safari .leaflet-tile {
+	image-rendering: -webkit-optimize-contrast;
+	}
+/* hack that prevents hw layers "stretching" when loading new tiles */
+.leaflet-safari .leaflet-tile-container {
+	width: 1600px;
+	height: 1600px;
+	-webkit-transform-origin: 0 0;
+	}
+.leaflet-marker-icon,
+.leaflet-marker-shadow {
+	display: block;
+	}
+/* .leaflet-container svg: reset svg max-width decleration shipped in Joomla! (joomla.org) 3.x */
+/* .leaflet-container img: map is broken in FF if you have max-width: 100% on tiles */
+.leaflet-container .leaflet-overlay-pane svg {
+	max-width: none !important;
+	max-height: none !important;
+	}
+.leaflet-container .leaflet-marker-pane img,
+.leaflet-container .leaflet-shadow-pane img,
+.leaflet-container .leaflet-tile-pane img,
+.leaflet-container img.leaflet-image-layer,
+.leaflet-container .leaflet-tile {
+	max-width: none !important;
+	max-height: none !important;
+	width: auto;
+	padding: 0;
+	}
+
+.leaflet-container img.leaflet-tile {
+	/* See: https://bugs.chromium.org/p/chromium/issues/detail?id=600120 */
+	mix-blend-mode: plus-lighter;
+}
+
+.leaflet-container.leaflet-touch-zoom {
+	-ms-touch-action: pan-x pan-y;
+	touch-action: pan-x pan-y;
+	}
+.leaflet-container.leaflet-touch-drag {
+	-ms-touch-action: pinch-zoom;
+	/* Fallback for FF which doesn't support pinch-zoom */
+	touch-action: none;
+	touch-action: pinch-zoom;
+}
+.leaflet-container.leaflet-touch-drag.leaflet-touch-zoom {
+	-ms-touch-action: none;
+	touch-action: none;
+}
+.leaflet-container {
+	-webkit-tap-highlight-color: transparent;
+}
+.leaflet-container a {
+	-webkit-tap-highlight-color: rgba(51, 181, 229, 0.4);
+}
+.leaflet-tile {
+	filter: inherit;
+	visibility: hidden;
+	}
+.leaflet-tile-loaded {
+	visibility: inherit;
+	}
+.leaflet-zoom-box {
+	width: 0;
+	height: 0;
+	-moz-box-sizing: border-box;
+	     box-sizing: border-box;
+	z-index: 800;
+	}
+/* workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=888319 */
+.leaflet-overlay-pane svg {
+	-moz-user-select: none;
+	}
+
+.leaflet-pane         { z-index: 400; }
+
+.leaflet-tile-pane    { z-index: 200; }
+.leaflet-overlay-pane { z-index: 400; }
+.leaflet-shadow-pane  { z-index: 500; }
+.leaflet-marker-pane  { z-index: 600; }
+.leaflet-tooltip-pane   { z-index: 650; }
+.leaflet-popup-pane   { z-index: 700; }
+
+.leaflet-map-pane canvas { z-index: 100; }
+.leaflet-map-pane svg    { z-index: 200; }
+
+.leaflet-vml-shape {
+	width: 1px;
+	height: 1px;
+	}
+.lvml {
+	behavior: url(#default#VML);
+	display: inline-block;
+	position: absolute;
+	}
+
+
+/* control positioning */
+
+.leaflet-control {
+	position: relative;
+	z-index: 800;
+	pointer-events: visiblePainted; /* IE 9-10 doesn't have auto */
+	pointer-events: auto;
+	}
+.leaflet-top,
+.leaflet-bottom {
+	position: absolute;
+	z-index: 1000;
+	pointer-events: none;
+	}
+.leaflet-top {
+	top: 0;
+	}
+.leaflet-right {
+	right: 0;
+	}
+.leaflet-bottom {
+	bottom: 0;
+	}
+.leaflet-left {
+	left: 0;
+	}
+.leaflet-control {
+	float: left;
+	clear: both;
+	}
+.leaflet-right .leaflet-control {
+	float: right;
+	}
+.leaflet-top .leaflet-control {
+	margin-top: 10px;
+	}
+.leaflet-bottom .leaflet-control {
+	margin-bottom: 10px;
+	}
+.leaflet-left .leaflet-control {
+	margin-left: 10px;
+	}
+.leaflet-right .leaflet-control {
+	margin-right: 10px;
+	}
+
+
+/* zoom and fade animations */
+
+.leaflet-fade-anim .leaflet-popup {
+	opacity: 0;
+	-webkit-transition: opacity 0.2s linear;
+	   -moz-transition: opacity 0.2s linear;
+	        transition: opacity 0.2s linear;
+	}
+.leaflet-fade-anim .leaflet-map-pane .leaflet-popup {
+	opacity: 1;
+	}
+.leaflet-zoom-animated {
+	-webkit-transform-origin: 0 0;
+	    -ms-transform-origin: 0 0;
+	        transform-origin: 0 0;
+	}
+svg.leaflet-zoom-animated {
+	will-change: transform;
+}
+
+.leaflet-zoom-anim .leaflet-zoom-animated {
+	-webkit-transition: -webkit-transform 0.25s cubic-bezier(0,0,0.25,1);
+	   -moz-transition:    -moz-transform 0.25s cubic-bezier(0,0,0.25,1);
+	        transition:         transform 0.25s cubic-bezier(0,0,0.25,1);
+	}
+.leaflet-zoom-anim .leaflet-tile,
+.leaflet-pan-anim .leaflet-tile {
+	-webkit-transition: none;
+	   -moz-transition: none;
+	        transition: none;
+	}
+
+.leaflet-zoom-anim .leaflet-zoom-hide {
+	visibility: hidden;
+	}
+
+
+/* cursors */
+
+.leaflet-interactive {
+	cursor: pointer;
+	}
+.leaflet-grab {
+	cursor: -webkit-grab;
+	cursor:    -moz-grab;
+	cursor:         grab;
+	}
+.leaflet-crosshair,
+.leaflet-crosshair .leaflet-interactive {
+	cursor: crosshair;
+	}
+.leaflet-popup-pane,
+.leaflet-control {
+	cursor: auto;
+	}
+.leaflet-dragging .leaflet-grab,
+.leaflet-dragging .leaflet-grab .leaflet-interactive,
+.leaflet-dragging .leaflet-marker-draggable {
+	cursor: move;
+	cursor: -webkit-grabbing;
+	cursor:    -moz-grabbing;
+	cursor:         grabbing;
+	}
+
+/* marker & overlays interactivity */
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-image-layer,
+.leaflet-pane > svg path,
+.leaflet-tile-container {
+	pointer-events: none;
+	}
+
+.leaflet-marker-icon.leaflet-interactive,
+.leaflet-image-layer.leaflet-interactive,
+.leaflet-pane > svg path.leaflet-interactive,
+svg.leaflet-image-layer.leaflet-interactive path {
+	pointer-events: visiblePainted; /* IE 9-10 doesn't have auto */
+	pointer-events: auto;
+	}
+
+/* visual tweaks */
+
+.leaflet-container {
+	background: #ddd;
+	outline-offset: 1px;
+	}
+.leaflet-container a {
+	color: #0078A8;
+	}
+.leaflet-zoom-box {
+	border: 2px dotted #38f;
+	background: rgba(255,255,255,0.5);
+	}
+
+
+/* general typography */
+.leaflet-container {
+	font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	font-size: 0.75rem;
+	line-height: 1.5;
+	}
+
+
+/* general toolbar styles */
+
+.leaflet-bar {
+	box-shadow: 0 1px 5px rgba(0,0,0,0.65);
+	border-radius: 4px;
+	}
+.leaflet-bar a {
+	background-color: #fff;
+	border-bottom: 1px solid #ccc;
+	width: 26px;
+	height: 26px;
+	line-height: 26px;
+	display: block;
+	text-align: center;
+	text-decoration: none;
+	color: black;
+	}
+.leaflet-bar a,
+.leaflet-control-layers-toggle {
+	background-position: 50% 50%;
+	background-repeat: no-repeat;
+	display: block;
+	}
+.leaflet-bar a:hover,
+.leaflet-bar a:focus {
+	background-color: #f4f4f4;
+	}
+.leaflet-bar a:first-child {
+	border-top-left-radius: 4px;
+	border-top-right-radius: 4px;
+	}
+.leaflet-bar a:last-child {
+	border-bottom-left-radius: 4px;
+	border-bottom-right-radius: 4px;
+	border-bottom: none;
+	}
+.leaflet-bar a.leaflet-disabled {
+	cursor: default;
+	background-color: #f4f4f4;
+	color: #bbb;
+	}
+
+.leaflet-touch .leaflet-bar a {
+	width: 30px;
+	height: 30px;
+	line-height: 30px;
+	}
+.leaflet-touch .leaflet-bar a:first-child {
+	border-top-left-radius: 2px;
+	border-top-right-radius: 2px;
+	}
+.leaflet-touch .leaflet-bar a:last-child {
+	border-bottom-left-radius: 2px;
+	border-bottom-right-radius: 2px;
+	}
+
+/* zoom control */
+
+.leaflet-control-zoom-in,
+.leaflet-control-zoom-out {
+	font: bold 18px 'Lucida Console', Monaco, monospace;
+	text-indent: 1px;
+	}
+
+.leaflet-touch .leaflet-control-zoom-in, .leaflet-touch .leaflet-control-zoom-out  {
+	font-size: 22px;
+	}
+
+
+/* layers control */
+
+.leaflet-control-layers {
+	box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+	background: #fff;
+	border-radius: 5px;
+	}
+.leaflet-control-layers-toggle {
+	background-image: url(images/layers.png);
+	width: 36px;
+	height: 36px;
+	}
+.leaflet-retina .leaflet-control-layers-toggle {
+	background-image: url(images/layers-2x.png);
+	background-size: 26px 26px;
+	}
+.leaflet-touch .leaflet-control-layers-toggle {
+	width: 44px;
+	height: 44px;
+	}
+.leaflet-control-layers .leaflet-control-layers-list,
+.leaflet-control-layers-expanded .leaflet-control-layers-toggle {
+	display: none;
+	}
+.leaflet-control-layers-expanded .leaflet-control-layers-list {
+	display: block;
+	position: relative;
+	}
+.leaflet-control-layers-expanded {
+	padding: 6px 10px 6px 6px;
+	color: #333;
+	background: #fff;
+	}
+.leaflet-control-layers-scrollbar {
+	overflow-y: scroll;
+	overflow-x: hidden;
+	padding-right: 5px;
+	}
+.leaflet-control-layers-selector {
+	margin-top: 2px;
+	position: relative;
+	top: 1px;
+	}
+.leaflet-control-layers label {
+	display: block;
+	font-size: 13px;
+	font-size: 1.08333em;
+	}
+.leaflet-control-layers-separator {
+	height: 0;
+	border-top: 1px solid #ddd;
+	margin: 5px -10px 5px -6px;
+	}
+
+/* Default icon URLs */
+.leaflet-default-icon-path { /* used only in path-guessing heuristic, see L.Icon.Default */
+	background-image: url(images/marker-icon.png);
+	}
+
+
+/* attribution and scale controls */
+
+.leaflet-container .leaflet-control-attribution {
+	background: #fff;
+	background: rgba(255, 255, 255, 0.8);
+	margin: 0;
+	}
+.leaflet-control-attribution,
+.leaflet-control-scale-line {
+	padding: 0 5px;
+	color: #333;
+	line-height: 1.4;
+	}
+.leaflet-control-attribution a {
+	text-decoration: none;
+	}
+.leaflet-control-attribution a:hover,
+.leaflet-control-attribution a:focus {
+	text-decoration: underline;
+	}
+.leaflet-attribution-flag {
+	display: inline !important;
+	vertical-align: baseline !important;
+	width: 1em;
+	height: 0.6669em;
+	}
+.leaflet-left .leaflet-control-scale {
+	margin-left: 5px;
+	}
+.leaflet-bottom .leaflet-control-scale {
+	margin-bottom: 5px;
+	}
+.leaflet-control-scale-line {
+	border: 2px solid #777;
+	border-top: none;
+	line-height: 1.1;
+	padding: 2px 5px 1px;
+	white-space: nowrap;
+	-moz-box-sizing: border-box;
+	     box-sizing: border-box;
+	background: rgba(255, 255, 255, 0.8);
+	text-shadow: 1px 1px #fff;
+	}
+.leaflet-control-scale-line:not(:first-child) {
+	border-top: 2px solid #777;
+	border-bottom: none;
+	margin-top: -2px;
+	}
+.leaflet-control-scale-line:not(:first-child):not(:last-child) {
+	border-bottom: 2px solid #777;
+	}
+
+.leaflet-touch .leaflet-control-attribution,
+.leaflet-touch .leaflet-control-layers,
+.leaflet-touch .leaflet-bar {
+	box-shadow: none;
+	}
+.leaflet-touch .leaflet-control-layers,
+.leaflet-touch .leaflet-bar {
+	border: 2px solid rgba(0,0,0,0.2);
+	background-clip: padding-box;
+	}
+
+
+/* popup */
+
+.leaflet-popup {
+	position: absolute;
+	text-align: center;
+	margin-bottom: 20px;
+	}
+.leaflet-popup-content-wrapper {
+	padding: 1px;
+	text-align: left;
+	border-radius: 12px;
+	}
+.leaflet-popup-content {
+	margin: 13px 24px 13px 20px;
+	line-height: 1.3;
+	font-size: 13px;
+	font-size: 1.08333em;
+	min-height: 1px;
+	}
+.leaflet-popup-content p {
+	margin: 17px 0;
+	margin: 1.3em 0;
+	}
+.leaflet-popup-tip-container {
+	width: 40px;
+	height: 20px;
+	position: absolute;
+	left: 50%;
+	margin-top: -1px;
+	margin-left: -20px;
+	overflow: hidden;
+	pointer-events: none;
+	}
+.leaflet-popup-tip {
+	width: 17px;
+	height: 17px;
+	padding: 1px;
+
+	margin: -10px auto 0;
+	pointer-events: auto;
+
+	-webkit-transform: rotate(45deg);
+	   -moz-transform: rotate(45deg);
+	    -ms-transform: rotate(45deg);
+	        transform: rotate(45deg);
+	}
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+	background: white;
+	color: #333;
+	box-shadow: 0 3px 14px rgba(0,0,0,0.4);
+	}
+.leaflet-container a.leaflet-popup-close-button {
+	position: absolute;
+	top: 0;
+	right: 0;
+	border: none;
+	text-align: center;
+	width: 24px;
+	height: 24px;
+	font: 16px/24px Tahoma, Verdana, sans-serif;
+	color: #757575;
+	text-decoration: none;
+	background: transparent;
+	}
+.leaflet-container a.leaflet-popup-close-button:hover,
+.leaflet-container a.leaflet-popup-close-button:focus {
+	color: #585858;
+	}
+.leaflet-popup-scrolled {
+	overflow: auto;
+	}
+
+.leaflet-oldie .leaflet-popup-content-wrapper {
+	-ms-zoom: 1;
+	}
+.leaflet-oldie .leaflet-popup-tip {
+	width: 24px;
+	margin: 0 auto;
+
+	-ms-filter: "progid:DXImageTransform.Microsoft.Matrix(M11=0.70710678, M12=0.70710678, M21=-0.70710678, M22=0.70710678)";
+	filter: progid:DXImageTransform.Microsoft.Matrix(M11=0.70710678, M12=0.70710678, M21=-0.70710678, M22=0.70710678);
+	}
+
+.leaflet-oldie .leaflet-control-zoom,
+.leaflet-oldie .leaflet-control-layers,
+.leaflet-oldie .leaflet-popup-content-wrapper,
+.leaflet-oldie .leaflet-popup-tip {
+	border: 1px solid #999;
+	}
+
+
+/* div icon */
+
+.leaflet-div-icon {
+	background: #fff;
+	border: 1px solid #666;
+	}
+
+
+/* Tooltip */
+/* Base styles for the element that has a tooltip */
+.leaflet-tooltip {
+	position: absolute;
+	padding: 6px;
+	background-color: #fff;
+	border: 1px solid #fff;
+	border-radius: 3px;
+	color: #222;
+	white-space: nowrap;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+	pointer-events: none;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+	}
+.leaflet-tooltip.leaflet-interactive {
+	cursor: pointer;
+	pointer-events: auto;
+	}
+.leaflet-tooltip-top:before,
+.leaflet-tooltip-bottom:before,
+.leaflet-tooltip-left:before,
+.leaflet-tooltip-right:before {
+	position: absolute;
+	pointer-events: none;
+	border: 6px solid transparent;
+	background: transparent;
+	content: "";
+	}
+
+/* Directions */
+
+.leaflet-tooltip-bottom {
+	margin-top: 6px;
+}
+.leaflet-tooltip-top {
+	margin-top: -6px;
+}
+.leaflet-tooltip-bottom:before,
+.leaflet-tooltip-top:before {
+	left: 50%;
+	margin-left: -6px;
+	}
+.leaflet-tooltip-top:before {
+	bottom: 0;
+	margin-bottom: -12px;
+	border-top-color: #fff;
+	}
+.leaflet-tooltip-bottom:before {
+	top: 0;
+	margin-top: -12px;
+	margin-left: -6px;
+	border-bottom-color: #fff;
+	}
+.leaflet-tooltip-left {
+	margin-left: -6px;
+}
+.leaflet-tooltip-right {
+	margin-left: 6px;
+}
+.leaflet-tooltip-left:before,
+.leaflet-tooltip-right:before {
+	top: 50%;
+	margin-top: -6px;
+	}
+.leaflet-tooltip-left:before {
+	right: 0;
+	margin-right: -12px;
+	border-left-color: #fff;
+	}
+.leaflet-tooltip-right:before {
+	left: 0;
+	margin-left: -12px;
+	border-right-color: #fff;
+	}
+
+/* Printing */
+
+@media print {
+	/* Prevent printers from removing background-images of controls. */
+	.leaflet-control {
+		-webkit-print-color-adjust: exact;
+		print-color-adjust: exact;
+		}
+	}
+</style>
+<style>
+:root{
+  --bg:#f6f3ea;--paper:#fffdf6;--ink:#1d2a1f;--muted:#5d6b5c;--line:#e2dccb;
+  --palm:#1f6b3a;--palm2:#2f8f4e;--leaf:#e3f0d8;--soil:#b5541c;--sun:#e6a417;--water:#3b82c4;
+  --ok:#2f8f4e;--warn:#e6a417;--bad:#c4421d;--wa:#1faa59;--onpalm:#ffffff;
+  --shadow:0 10px 30px -18px rgba(40,50,20,.45);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#121812;--paper:#1a221a;--ink:#eef3e8;--muted:#a3b19f;--line:#2c382c;
+  --palm:#6fcf8a;--palm2:#4fb36d;--leaf:#1f3324;--soil:#f08a4b;--sun:#f2c14e;--water:#6aa8e0;
+  --ok:#4fb36d;--warn:#e9b432;--bad:#e2643c;--wa:#25c76a;--onpalm:#0e1a10;--shadow:0 10px 30px -18px #000;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121812;--paper:#1a221a;--ink:#eef3e8;--muted:#a3b19f;--line:#2c382c;
+  --palm:#6fcf8a;--palm2:#4fb36d;--leaf:#1f3324;--soil:#f08a4b;--sun:#f2c14e;--water:#6aa8e0;
+  --ok:#4fb36d;--warn:#e9b432;--bad:#e2643c;--wa:#25c76a;--onpalm:#0e1a10;--shadow:0 10px 30px -18px #000;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:16px/1.6 "Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.w{max-width:1040px;margin:0 auto}
+h1,h2,h3{line-height:1.15;text-wrap:balance;margin:0;letter-spacing:-.02em}
+h1{font-size:clamp(32px,7vw,58px);font-weight:800}
+h2{font-size:clamp(25px,4.6vw,38px);font-weight:800}
+h3{font-size:18px;font-weight:700}
+p{margin:0}
+a{color:var(--palm)}
+.lab{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--soil)}
+.mut{color:var(--muted)}
+section{padding-block:56px;border-top:1px solid var(--line)}
+.head{display:grid;gap:10px;max-width:660px;margin-bottom:28px}
+.note{font-size:13.5px;color:var(--muted)}
+
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:1001}
+nav.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:1000;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);
+  display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:12px;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px;text-decoration:none;color:var(--ink);letter-spacing:-.02em}
+.brand svg{width:34px;height:34px}
+.brand em{font-style:normal;color:var(--soil)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 20px;border-radius:14px;border:0;
+  font:700 16px/1 inherit;font-family:inherit;text-decoration:none;cursor:pointer}
+.btn.pri{background:var(--palm);color:var(--onpalm)}
+.btn.wa{background:var(--wa);color:#fff}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.btn.sm{min-height:40px;padding:0 14px;font-size:14px;border-radius:12px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.btn svg{width:20px;height:20px;flex:none}
+
+.hero{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:36px;align-items:center;padding-block:44px 56px;border:0}
+.pill{display:inline-flex;gap:8px;align-items:center;background:var(--leaf);color:var(--palm);font-size:13px;font-weight:700;padding:6px 12px;border-radius:999px;justify-self:start}
+.pill b{width:8px;height:8px;border-radius:50%;background:var(--palm2)}
+.hero .txt{display:grid;gap:18px}
+.hero .tag{font-size:15px;font-weight:800;color:var(--soil);letter-spacing:.02em}
+.hero .lead{font-size:18px;color:var(--muted);max-width:520px}
+.ctas{display:flex;flex-wrap:wrap;gap:10px}
+.phone{background:var(--paper);border:1px solid var(--line);border-radius:28px;box-shadow:var(--shadow);padding:16px;max-width:360px;justify-self:center;width:100%}
+.phone .bar{display:flex;align-items:center;gap:10px;padding-bottom:12px;border-bottom:1px solid var(--line);margin-bottom:12px}
+.phone .av{width:36px;height:36px}
+.chat{display:grid;gap:8px;font-size:14.5px}
+.msg{max-width:85%;padding:9px 12px;border-radius:14px;line-height:1.45}
+.msg.in{background:var(--leaf);border-top-left-radius:4px}
+.msg.out{background:color-mix(in srgb,var(--wa) 18%,var(--paper));justify-self:end;border-top-right-radius:4px}
+.msg small{display:block;color:var(--muted);font-size:11px;margin-top:3px}
+.mini{display:grid;grid-template-columns:repeat(6,1fr);gap:3px;margin-top:6px;border-radius:8px;overflow:hidden}
+.mini i{aspect-ratio:1;display:block}
+
+.card{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:22px;display:grid;gap:8px;align-content:start;min-width:0}
+.four{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;counter-reset:s}
+.four .card::before{counter-increment:s;content:counter(s);width:34px;height:34px;border-radius:50%;background:var(--palm);color:var(--onpalm);display:grid;place-items:center;font-weight:800}
+.four svg{width:100%;height:auto;border-radius:12px;background:var(--bg)}
+.three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.callout{margin-top:16px;background:var(--leaf);border-radius:16px;padding:14px 18px;font-size:15px}
+
+/* ===== tool ===== */
+#cek{scroll-margin-top:80px}
+.tool{display:grid;gap:14px}
+.step{background:var(--paper);border:1px solid var(--line);border-radius:22px;padding:clamp(16px,3vw,26px);display:grid;gap:14px;min-width:0}
+.step>header{display:flex;gap:12px;align-items:center}
+.step>header .n{width:34px;height:34px;flex:none;border-radius:50%;background:var(--palm);color:var(--onpalm);display:grid;place-items:center;font-weight:800}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.fields label,.lbl{display:grid;gap:5px;font-size:13.5px;font-weight:700;color:var(--muted)}
+input,select,textarea{font:500 16px inherit;font-family:inherit;color:var(--ink);background:var(--bg);border:1.5px solid var(--line);border-radius:12px;padding:11px 12px;width:100%;min-width:0}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--palm2);outline-offset:1px}
+.tabs{display:flex;flex-wrap:wrap;background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px}
+.tabs button{flex:1 1 120px;border:0;background:transparent;color:var(--muted);font:700 14px inherit;font-family:inherit;padding:10px;border-radius:10px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--paper);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.how{font-size:15px;display:grid;gap:10px}
+.how ol{margin:0;padding-left:20px;display:grid;gap:4px}
+.mapbox{position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--line)}
+#map{height:min(62vh,440px);background:#2b3a2e}
+.maptool{position:absolute;z-index:500;left:56px;right:10px;top:10px;display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:end;pointer-events:none}
+.maptool>*{pointer-events:auto}
+.chip{background:rgba(255,253,246,.95);color:#1d2a1f;border-radius:12px;padding:8px 12px;font-size:14px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.chip b{font-variant-numeric:tabular-nums}
+.mapbtns{display:flex;gap:6px}
+.mapbtns button{background:rgba(255,253,246,.95);color:#1d2a1f;border:0;border-radius:10px;padding:8px 11px;font:700 13.5px inherit;font-family:inherit;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.search{display:flex;gap:8px}
+.search input{flex:1}
+.gpsbox{display:grid;gap:8px;background:var(--bg);border-radius:14px;padding:14px}
+.gpsbar{height:8px;border-radius:8px;background:var(--line);overflow:hidden}.gpsbar i{display:block;height:100%;width:0;background:var(--palm2);transition:width .3s}
+.plist{display:flex;flex-wrap:wrap;gap:6px;font-size:13px;font-variant-numeric:tabular-nums}
+.plist span{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:3px 8px}
+.guide{background:var(--leaf);border-radius:14px;padding:12px 14px;font-size:15px}
+.confirm{display:flex;flex-wrap:wrap;gap:8px}
+.pdfbar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;background:var(--leaf);border-radius:16px;padding:12px 14px}
+.err{color:var(--bad);font-weight:600;font-size:14.5px}
+.consent{display:flex;gap:10px;align-items:flex-start;font-size:14.5px;color:var(--muted)}
+.consent input{width:22px;height:22px;flex:none;margin-top:2px;accent-color:var(--palm)}
+.prog{display:grid;gap:8px}
+.prog li{color:var(--muted)}.prog li.on{color:var(--ink);font-weight:700}.prog li.done{color:var(--palm)}
+.prog li.done::marker{content:"✓  "}
+.demo-banner{background:color-mix(in srgb,var(--sun) 22%,var(--paper));border:1px solid color-mix(in srgb,var(--sun) 50%,var(--line));border-radius:14px;padding:10px 14px;font-size:14px}
+
+/* results */
+.res{display:grid;gap:14px}
+.res-head{display:grid;gap:6px}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.kpi{background:var(--bg);border-radius:14px;padding:12px;min-width:0}
+.kpi b{display:block;font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.kpi span{font-size:12.5px;color:var(--muted)}
+.zbar{display:flex;height:16px;border-radius:8px;overflow:hidden;background:var(--line)}
+.zbar i{display:block;height:100%}
+.zleg{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13.5px;color:var(--muted)}
+.zleg i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.spark{width:100%;height:auto;background:var(--bg);border-radius:14px}
+.rep{display:grid;gap:14px}
+.rep h4{margin:0 0 6px;font-size:15px}
+.rep ul{margin:0;padding-left:20px;display:grid;gap:4px}
+.conf{font-size:13.5px;color:var(--muted);border-left:3px solid var(--sun);padding-left:10px}
+.ovl{display:flex;flex-wrap:wrap;gap:6px}
+.ovl button{border:1.5px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;padding:7px 12px;font:700 13.5px inherit;font-family:inherit;cursor:pointer}
+.ovl button[aria-pressed="true"]{background:var(--palm);border-color:var(--palm);color:var(--onpalm)}
+.consult{display:grid;gap:10px}
+.log{display:grid;gap:8px;max-height:420px;overflow:auto;padding:4px}
+.log .msg{white-space:pre-wrap}
+.sugs{display:flex;flex-wrap:wrap;gap:6px}
+.sugs button{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:7px 12px;font:600 13.5px inherit;font-family:inherit;cursor:pointer;text-align:left}
+.ask{display:flex;gap:8px}.ask input{flex:1}
+
+/* demo field */
+.demo{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.8fr);gap:22px;align-items:start}
+.map2{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:14px;display:grid;gap:10px}
+.gwrap{position:relative}
+.gwrap svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.grid{display:grid;grid-template-columns:repeat(8,1fr);gap:4px}
+.grid button{aspect-ratio:1;border:0;border-radius:6px;cursor:pointer;font:700 10px inherit;font-family:inherit;color:rgba(0,0,0,.55);padding:0;outline:3px solid transparent;outline-offset:1px}
+.grid button[aria-pressed="true"]{outline-color:var(--ink)}
+.seg{display:inline-flex;flex-wrap:wrap;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px;justify-self:start}
+.seg button{border:0;background:transparent;color:var(--muted);font:700 13.5px inherit;font-family:inherit;padding:8px 12px;border-radius:9px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--paper);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cmp div{background:var(--bg);border-radius:12px;padding:10px 12px}
+.cmp b{display:block;font-size:22px;font-variant-numeric:tabular-nums}
+.cmp span{font-size:12.5px;color:var(--muted)}
+.cmp .win{background:var(--leaf)}.cmp .win b{color:var(--palm)}
+.read{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:22px;display:grid;gap:12px}
+.read .big{font-size:42px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.tagz{display:inline-block;font-size:13px;font-weight:700;padding:4px 10px;border-radius:999px;justify-self:start}
+.route{font-size:14px;background:var(--bg);border-radius:12px;padding:12px;border:1px dashed var(--line)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--muted)}
+.legend i{width:12px;height:12px;border-radius:3px;display:inline-block;margin-right:6px;vertical-align:-1px}
+
+.mods{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.mods .ic{width:44px;height:44px;border-radius:12px;background:var(--leaf);display:grid;place-items:center}
+.mods .ic svg{width:26px;height:26px;stroke:var(--palm);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.meta{font-size:12.5px;color:var(--muted);font-weight:600}
+.job{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:center;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--bg)}
+.job .ph{width:42px;height:42px;border-radius:50%;background:var(--soil);color:var(--paper);display:grid;place-items:center;font-weight:800}
+.job b{display:block}.job .v{font-size:12px;color:var(--palm);font-weight:700}
+.soon{font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--soil);background:color-mix(in srgb,var(--soil) 14%,transparent);padding:3px 8px;border-radius:999px;justify-self:start}
+.calc{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:end;margin-top:4px}
+.calc label{display:grid;gap:4px;font-size:13px;font-weight:700;color:var(--muted)}
+.calc input,.calc select{width:130px;padding:8px 10px}
+.out{display:grid;gap:4px;background:var(--bg);border-radius:12px;padding:12px;font-size:14px}
+.out b{font-size:24px;font-variant-numeric:tabular-nums}
+.formula{font-size:14px;background:var(--bg);border-radius:12px;padding:12px;font-weight:600}
+.plan{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px;align-items:center}
+.plan svg{width:100%;height:auto;background:var(--paper);border:1px solid var(--line);border-radius:20px}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:6px}
+.facts div{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:12px}
+.facts b{display:block;font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}
+.facts span{font-size:12.5px;color:var(--muted)}
+.gain{font-size:14.5px;background:var(--leaf);color:var(--palm);border-radius:12px;padding:10px 14px;font-weight:600}
+details{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:4px 18px}
+details+details{margin-top:10px}
+summary{cursor:pointer;font-weight:700;padding-block:14px;list-style:none;display:flex;justify-content:space-between;gap:12px}
+summary::after{content:"+";color:var(--soil);font-size:22px;line-height:1}
+details[open] summary::after{content:"–"}
+details p{padding-bottom:16px;color:var(--muted)}
+.final{background:var(--palm);color:var(--onpalm);border-radius:28px;padding:clamp(26px,5vw,48px);display:grid;gap:16px;margin-block:20px 40px;border:0}
+.final h2{color:var(--onpalm)}
+.final p{opacity:.88;max-width:560px}
+.final .btn.light{background:var(--paper);color:var(--ink)}
+.final .btn.out{background:transparent;color:var(--onpalm);border:1.5px solid currentColor}
+footer{padding-block:24px 40px;font-size:13.5px;color:var(--muted);display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;border-top:1px solid var(--line)}
+.leaflet-container{font:inherit}.leaflet-control-attribution{font-size:10px!important}
+
+@media (max-width:860px){
+  .hero,.demo,.plan{grid-template-columns:1fr}
+  .four,.mods{grid-template-columns:1fr 1fr}
+  .three,.two{grid-template-columns:1fr}
+  .kpis{grid-template-columns:1fr 1fr}
+}
+@media (max-width:460px){.four,.mods{grid-template-columns:1fr}nav.top .btn span{display:none}.facts b{font-size:19px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+html{scroll-behavior:smooth}
+</style>
+
+</head><body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="wa" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3Z"/></symbol>
+  <symbol id="logo" viewBox="0 0 40 40"><rect width="40" height="40" rx="11" fill="#1f6b3a"/><g fill="#e3f0d8" opacity=".35"><rect x="5" y="5" width="9" height="9" rx="2"/><rect x="15.5" y="5" width="9" height="9" rx="2"/><rect x="26" y="5" width="9" height="9" rx="2"/></g><g fill="none" stroke="#fffdf6" stroke-width="2.2" stroke-linecap="round"><path d="M20 35V22"/><path d="M20 22c-3-4-8-5-12-3"/><path d="M20 22c3-4 8-5 12-3"/></g><circle cx="17" cy="25.5" r="2.4" fill="#e6a417"/><circle cx="23" cy="25.5" r="2.4" fill="#e3743a"/><circle cx="20" cy="29.5" r="2.4" fill="#c4421d"/></symbol>
+</svg>
+
+<div class="w">
+<nav class="top" aria-label="Utama">
+  <a class="brand" href="#"><svg><use href="#logo"/></svg><span>Plan<em>tandan</em></span></a>
+  <a class="btn pri sm" href="#cek"><span>Cek kebun gratis</span><b aria-hidden="true">→</b></a>
+</nav>
+
+<header class="hero">
+  <div class="txt">
+    <span class="pill"><b></b>Program percontohan · Barito Utara, Kalteng</span>
+    <span class="tag">Dari langit ke tandan.</span>
+    <h1>Cek kesehatan kebun sawitmu dari satelit. Gratis.</h1>
+    <p class="lead">Tunjukkan kebunmu sekali di peta. Satelit dan AI menggambar batasnya, membaca kesehatan tiap kotak 10 meter, lalu menjelaskannya dalam bahasa lapangan. Tanpa datang ke lokasi, tanpa aplikasi.</p>
+    <div class="ctas">
+      <a class="btn pri" href="#cek">Cek kebun sekarang</a>
+      <a class="btn ghost" href="#cara">Bagaimana caranya?</a>
+    </div>
+    <p class="note">Tanpa aplikasi. Cukup HP dengan internet, atau titip ke keluarga yang punya HP.</p>
+  </div>
+  <div class="phone" aria-label="Contoh percakapan dengan asisten Plantandan">
+    <div class="bar"><svg class="av"><use href="#logo"/></svg><div><b>Asisten Plantandan</b><div class="mut" style="font-size:12px">menjawab dari data kebunmu</div></div></div>
+    <div class="chat">
+      <div class="msg in">Laporan siap: <b>2,1 ha</b> di Gunung Timang, citra 4 hari lalu. Sebagian kecil sisi timur lebih pucat dari sisa kebun.
+        <div class="mini" id="mini" aria-hidden="true"></div><small>contoh tampilan</small></div>
+      <div class="msg out">Kenapa sisi timur pucat?</div>
+      <div class="msg in">Sisi itu juga yang paling rendah. Coba cek: ada air tergenang di piringan? Pelepah bawah menguning? Kalau tergenang, perbaiki parit dulu sebelum menambah pupuk.<small>Asisten Plantandan</small></div>
+    </div>
+  </div>
+</header>
+
+<!-- ===================== CARA MENDETEKSI ===================== -->
+<section id="cara">
+  <div class="head"><span class="lab">Cara kami membaca kebunmu</span><h2>Empat langkah, dari satu ketukan ke saran untuk kebunmu.</h2>
+    <p class="mut">Kamu cukup menunjukkan kebunmu di peta. Tidak perlu datang ke lokasi, tidak perlu aplikasi, dan tetap jalan di sinyal lemah.</p></div>
+  <div class="four">
+    <div class="card">
+      <svg viewBox="0 0 160 90" aria-hidden="true"><rect x="10" y="8" width="140" height="74" rx="8" fill="var(--palm2)" opacity=".35"/><path d="M10 60 C50 50 70 70 150 52" stroke="var(--water)" stroke-width="5" fill="none" opacity=".7"/><polygon points="44,20 104,16 118,44 96,62 50,58 36,38" fill="var(--sun)" fill-opacity=".25" stroke="var(--paper)" stroke-width="2"/><g fill="var(--sun)" stroke="var(--paper)" stroke-width="1.5"><circle cx="44" cy="20" r="3.5"/><circle cx="104" cy="16" r="3.5"/><circle cx="118" cy="44" r="3.5"/><circle cx="96" cy="62" r="3.5"/><circle cx="50" cy="58" r="3.5"/><circle cx="36" cy="38" r="3.5"/></g><circle cx="76" cy="38" r="7" fill="var(--paper)" stroke="var(--ink)" stroke-width="2"/></svg>
+      <h3>Tunjuk kebunmu sekali</h3><p class="mut">Pilih desamu, lalu ketuk tengah kebun di peta. AI membaca foto satelit dan menggambar batas kebun otomatis. Kamu tinggal cek dan geser titik kalau ada yang meleset.</p></div>
+    <div class="card">
+      <svg viewBox="0 0 160 90" aria-hidden="true"><circle cx="130" cy="18" r="6" fill="var(--sun)"/><g transform="translate(40 12) rotate(-18)"><rect x="-6" y="-4" width="12" height="8" rx="2" fill="var(--ink)"/><rect x="-26" y="-3" width="17" height="6" fill="var(--water)"/><rect x="9" y="-3" width="17" height="6" fill="var(--water)"/></g><path d="M40 22 L20 80 M40 22 L80 80" stroke="var(--palm2)" stroke-dasharray="3 3"/><ellipse cx="112" cy="50" rx="22" ry="9" fill="var(--paper)"/><path d="M96 42 L128 58 M128 42 L96 58" stroke="var(--bad)" stroke-width="3" stroke-linecap="round"/><rect x="10" y="78" width="140" height="6" rx="3" fill="var(--palm2)" opacity=".5"/></svg>
+      <h3>Satelit memotret, awan dibuang</h3><p class="mut">Sentinel-2 lewat di atas Barito Utara setiap ±5 hari. Bagian foto yang tertutup awan tidak dipakai, supaya tidak salah baca.</p></div>
+    <div class="card">
+      <svg viewBox="0 0 160 90" aria-hidden="true" id="pixSvg"></svg>
+      <h3>Ukur hijau daun per kotak</h3><p class="mut">Kebun dibagi kotak 10 × 10 m (kira-kira 1 sampai 2 pokok). Tiap kotak diukur seberapa hijau dan rapat daunnya.</p></div>
+    <div class="card">
+      <svg viewBox="0 0 160 90" aria-hidden="true"><rect x="14" y="40" width="22" height="36" rx="4" fill="var(--ok)"/><rect x="42" y="30" width="22" height="46" rx="4" fill="var(--ok)"/><rect x="70" y="36" width="22" height="40" rx="4" fill="var(--ok)"/><rect x="98" y="52" width="22" height="24" rx="4" fill="var(--warn)"/><rect x="126" y="62" width="22" height="14" rx="4" fill="var(--bad)"/><path d="M10 40 H150" stroke="var(--ink)" stroke-dasharray="4 4"/><text x="12" y="14" font-size="9" fill="var(--muted)" font-family="inherit">rata-rata kebunmu</text></svg>
+      <h3>Bandingkan dengan kebunmu sendiri</h3><p class="mut">Kotak yang jauh lebih pucat dari rata-rata kebunmu ditandai kuning atau merah. AI lalu menjelaskan dan memberi saran.</p></div>
+  </div>
+  <div class="callout"><b>Langkah terakhir tetap di tanganmu:</b> datangi kotak kuning dan merah, lihat langsung pokoknya. Satelit hanya melihat dari atas, jadi laporan ini adalah petunjuk di mana harus mencari, bukan diagnosis.</div>
+</section>
+
+<!-- ===================== ALAT CEK ===================== -->
+<section id="cek">
+  <div class="head"><span class="lab">Cek kebunmu</span><h2>Tunjukkan kebunmu, sisanya kami kerjakan.</h2></div>
+  <div class="demo-banner" id="demoBanner" hidden>Mode contoh: server analisis belum tersambung, jadi hasil di bawah adalah contoh buatan, bukan data kebunmu.</div>
+  <form class="tool" id="form" novalidate>
+    <div class="step">
+      <header><span class="n">1</span><div><h3>Di mana kebunmu?</h3><p class="note">Tidak perlu tahu koordinat. Cukup tunjukkan kebunmu di peta.</p></div></header>
+      <div class="fields">
+        <label>Kecamatan<select name="kecamatan" id="kec" required>
+          <option value="">Pilih kecamatan</option><option>Gunung Timang</option><option>Gunung Purei</option><option>Lahei</option><option>Lahei Barat</option><option>Montallat</option><option>Teweh Baru</option><option>Teweh Selatan</option><option>Teweh Tengah</option><option>Teweh Timur</option></select></label>
+        <label>Desa atau patokan terdekat<input name="desa" id="desa" required placeholder="contoh: Gunung Timang, dekat SD"></label>
+      </div>
+      <button type="button" class="btn ghost sm" id="qBtn" style="justify-self:start">Tampilkan di peta</button>
+      <div class="guide" id="guide" aria-live="polite"><b>👆 Ketuk sekali di tengah kebunmu.</b> Perbesar peta sampai kamu mengenali jalan, sungai, atau rumah di dekat kebun.</div>
+      <div class="mapbox">
+        <div id="map" aria-label="Peta satelit untuk menunjukkan kebun"></div>
+        <div class="maptool"><span class="chip" id="chip" hidden>Luas <b id="pA">0</b> ha · <b id="pN">0</b> titik</span></div>
+      </div>
+      <div class="confirm" id="confirm" hidden>
+        <button type="button" class="btn pri sm" id="okBtn">✓ Ya, ini kebun saya</button>
+        <button type="button" class="btn ghost sm" id="editBtn">Geser titik</button>
+        <button type="button" class="btn ghost sm" id="againBtn">Ketuk ulang</button>
+      </div>
+      <p class="note">Bingung? <a href="#daftar" class="js-wa" data-msg="Halo Plantandan, saya mau dibantu menunjukkan lokasi kebun saya.">Minta dibantu tim kami lewat WhatsApp</a>. Kirim nama desa dan patokan, kami yang menandai kebunmu.</p>
+    </div>
+
+    <div class="step">
+      <header><span class="n">2</span><div><h3>Siapa pemilik kebunnya?</h3><p class="note">Supaya laporan bisa kami kirim ulang lewat WhatsApp.</p></div></header>
+      <div class="fields">
+        <label>Nama<input name="nama" autocomplete="name" required placeholder="contoh: Pak Rahmat"></label>
+        <label>Nomor WhatsApp<input name="wa" inputmode="tel" autocomplete="tel" required placeholder="08xx xxxx xxxx"></label>
+        <label>Tahun tanam (kalau tahu)<input name="tahunTanam" inputmode="numeric" maxlength="4" placeholder="contoh: 2014"></label>
+      </div>
+    </div>
+
+    <div class="step">
+      <header><span class="n">3</span><div><h3>Kirim dan tunggu laporannya</h3></div></header>
+      <label class="consent"><input type="checkbox" name="setuju" required><span>Saya setuju lokasi kebun dan nomor WhatsApp saya disimpan Plantandan untuk membuat laporan ini dan memperbaiki peta sawit Barito Utara. Data tidak dijual ke pihak lain dan bisa saya minta hapus kapan saja.</span></label>
+      <p class="err" id="err" role="alert" hidden></p>
+      <button type="submit" class="btn pri" id="go" style="justify-self:start">Buat laporan kebun saya</button>
+      <ol class="prog" id="prog" hidden><li>Mengambil foto satelit 90 hari terakhir</li><li>Membuang awan dan menghitung tiap kotak 10 m</li><li>Membandingkan dengan riwayat 3 tahun</li><li>Asisten AI menulis laporan</li></ol>
+    </div>
+  </form>
+
+  <div class="step res" id="res" hidden style="margin-top:14px">
+    <div class="pdfbar"><button type="button" class="btn pri" id="pdfBtn">📄 Unduh laporan PDF</button><span class="note">Simpan di HP untuk dibaca tanpa internet, dicetak, atau dikirim lewat WhatsApp. Ukurannya kecil.</span></div>
+    <div class="res-head"><span class="lab" id="rId">Laporan</span><h2 id="rTitle"></h2><p class="mut" id="rSum"></p></div>
+    <div class="ovl" role="group" aria-label="Lapisan peta"><button type="button" data-o="ndvi" aria-pressed="true">Hijau daun per kotak</button><button type="button" data-o="zona" aria-pressed="false">Zona perlu dicek</button><button type="button" data-o="off" aria-pressed="false">Foto asli</button></div>
+    <p class="note">Lapisan warna sudah muncul di peta di atas. Hijau tua = daun rapat, kuning–merah = lebih pucat.</p>
+    <div class="kpis" id="kpis"></div>
+    <div><div class="zbar" id="zbar"></div><div class="zleg" id="zleg" style="margin-top:8px"></div></div>
+    <div><h3 style="font-size:16px;margin-bottom:8px">Riwayat hijau daun sejak 2023</h3><svg class="spark" id="spark" viewBox="0 0 600 180" role="img" aria-label="Grafik riwayat"></svg></div>
+    <div class="rep" id="rep"></div>
+    <p class="conf" id="rConf"></p>
+    <div class="consult">
+      <h3>Tanya soal kebunmu</h3>
+      <p class="note">Asisten menjawab berdasarkan data kebun di atas. Laporan tersimpan di HP ini, jadi kamu bisa kembali bertanya nanti.</p>
+      <div class="log" id="log" aria-live="polite"></div>
+      <div class="sugs" id="sugs"></div>
+      <form class="ask" id="ask"><input id="askIn" maxlength="500" placeholder="Tulis pertanyaan…" aria-label="Pertanyaan"><button class="btn pri sm" type="submit">Kirim</button></form>
+    </div>
+    <div class="ctas"><button type="button" class="btn pri sm" id="pdfBtn2">📄 Unduh PDF (dengan tanya jawab)</button><button type="button" class="btn ghost sm" id="newBtn">Cek kebun lain</button><a class="btn wa sm js-wa" href="#daftar" data-msg="Halo Plantandan, saya mau tanya soal laporan kebun saya."><svg><use href="#wa"/></svg>Tanya lewat WhatsApp</a></div>
+  </div>
+  <div id="resume" hidden class="callout" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between"><span>Ada laporan kebun yang tersimpan di HP ini.</span><button type="button" class="btn pri sm" id="resumeBtn">Buka laporan terakhir</button></div>
+</section>
+
+<!-- ===================== CONTOH RUTE ===================== -->
+<section id="contoh">
+  <div class="head"><span class="lab">Rute cek tercepat</span><h2>Datangi yang bermasalah saja.</h2>
+    <p class="mut">Dari zona kuning dan merah, sistem menghitung urutan jalan terpendek dari gerbang. Contoh di bawah memakai kebun buatan; ketuk satu blok untuk membaca nilainya.</p></div>
+  <div class="demo">
+    <div class="map2">
+      <div class="gwrap"><div class="grid" id="grid" role="group" aria-label="Peta blok kebun contoh"></div><svg id="rsvg" aria-hidden="true"></svg></div>
+      <div class="seg" role="group" aria-label="Pilih rute"><button type="button" data-r="k" aria-pressed="true">Rute Plantandan</button><button type="button" data-r="a" aria-pressed="false">Keliling semua</button><button type="button" data-r="n" aria-pressed="false">Sembunyikan</button></div>
+      <div class="cmp"><div class="win"><b id="dK">–</b><span>Hanya blok kuning &amp; merah</span></div><div><b id="dA">–</b><span>Menyusuri semua blok</span></div></div>
+      <div class="legend"><span><i style="background:var(--ok)"></i>Normal</span><span><i style="background:var(--warn)"></i>Perlu dicek</span><span><i style="background:var(--bad)"></i>Tindakan</span></div>
+    </div>
+    <div class="read" aria-live="polite">
+      <span class="lab" id="rBlk">Blok —</span><div class="big" id="rVal">—</div><span class="tagz" id="rTag">Pilih blok</span>
+      <p class="mut" id="rTxt">Di laporan sungguhan, rute dihitung dari kotak 10 m yang bermasalah dan jalur kebun yang kamu rekam sekali dengan GPS HP.</p>
+      <div class="route"><b>Urutan cek:</b> <span id="rRt">–</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== HARGA & PASOKAN ===================== -->
+<section id="harga">
+  <div class="head"><span class="lab">Harga &amp; pasokan · segera</span><h2>Jual ke pembeli terbaik, beli pupuk dengan harga wajar.</h2>
+    <p class="mut">Kami sedang mendata pembeli TBS dan kios pupuk di Muara Teweh dan sekitarnya. Hitungan di bawah sudah bisa kamu pakai sekarang.</p></div>
+  <div class="two">
+    <div class="card"><span class="soon">Pembeli TBS terdekat</span><h3>Bandingkan harga bersih, bukan harga di papan</h3>
+      <p class="mut">Harga yang tinggi bisa kalah setelah dipotong sortasi dan ongkos angkut. Plantandan akan memetakan PKS, RAM, dan pengepul di Barito Utara, lalu mengurutkan mana yang paling menguntungkan dari lokasi kebunmu.</p>
+      <div class="formula">Harga bersih = harga beli − potongan sortasi − ongkos angkut</div>
+      <div class="calc">
+        <label>Harga beli (Rp/kg)<input type="number" inputmode="numeric" id="hH" value="3000" min="0" step="10"></label>
+        <label>Potongan sortasi (%)<input type="number" inputmode="decimal" id="hS" value="5" min="0" max="50" step="0.5"></label>
+        <label>Jarak (km)<input type="number" inputmode="decimal" id="hJ" value="18" min="0" step="1"></label>
+        <label>Ongkos (Rp/kg/km)<input type="number" inputmode="numeric" id="hO" value="6" min="0" step="1"></label>
+      </div>
+      <div class="out" aria-live="polite"><span>Harga bersih di kebunmu</span><b id="hR">–</b><span class="mut" id="hX"></span></div>
+      <p class="note">Angka awal contoh. Harga acuan resmi tetap dari penetapan Dinas Perkebunan Kalteng per periode.</p></div>
+    <div class="card"><span class="soon">Pupuk</span><h3>Harga kios dan distributor lokal</h3>
+      <p class="mut">Pupuk untuk sawit tidak termasuk pupuk bersubsidi, jadi harganya mengikuti pasar. Plantandan akan mengumpulkan harga dari distributor resmi dan kios di Muara Teweh setiap minggu, supaya kamu tahu harga wajarnya sebelum membeli.</p>
+      <p class="mut">Pupuk dan bibit bersertifikat bisa dipesan bersama oleh kelompok tani langsung dari distributor resmi, dengan jumlah sesuai laporan zona kebun.</p></div>
+  </div>
+</section>
+
+<!-- ===================== KELAS & KERJA ===================== -->
+<section id="belajar">
+  <div class="head"><span class="lab">Kelas lapangan · segera</span><h2>Belajar dari mandor, lewat video 3 menit.</h2>
+    <p class="mut">Video pendek direkam di kebun Barito Utara bersama mandor lokal, lalu kuis singkat. Lulus semua kuis, dapat sertifikat digital dengan kode verifikasi.</p></div>
+  <div class="mods">
+    <div class="card"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="6"/><circle cx="10" cy="12" r="1.2"/><circle cx="14" cy="12" r="1.2"/><circle cx="12" cy="15" r="1.2"/><path d="M12 7V3"/></svg></div><h3>Panen TBS</h3><p class="mut">Kriteria matang dari brondolan, potong gagang, susun di TPH.</p><span class="meta">6 video · kuis</span></div>
+    <div class="card"><div class="ic"><svg viewBox="0 0 24 24"><path d="M6 20h12l-2-9H8z"/><path d="M9 11V7a3 3 0 0 1 6 0v4"/></svg></div><h3>Pemupukan tepat</h3><p class="mut">Waktu tabur dan membaca gejala kurang hara di daun.</p><span class="meta">5 video · kuis</span></div>
+    <div class="card"><div class="ic"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg></div><h3>K3 egrek &amp; dodos</h3><p class="mut">Memakai egrek dan dodos dengan aman, alat pelindung, arah jatuh tandan.</p><span class="meta">4 video · kuis</span></div>
+    <div class="card"><div class="ic"><svg viewBox="0 0 24 24"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></svg></div><h3>Membaca peta digital</h3><p class="mut">Pakai laporan Plantandan untuk menemukan kotak kuning dan jalur cek.</p><span class="meta">4 video · kuis</span></div>
+  </div>
+  <div class="two" style="margin-top:14px">
+    <div class="card"><h3>Untuk calon pekerja</h3><p class="mut">Lulus kelas, dapat lencana terverifikasi, lalu tampil di daftar tenaga panen dan rawat kebun di kecamatanmu.</p></div>
+    <div class="card"><h3>Untuk pemilik kebun</h3><p class="mut">Cari tenaga yang sudah lulus kelas K3 dan panen, lihat sertifikatnya sebelum menghubungi.</p>
+      <div class="job"><div class="ph">R</div><div><b>Pemanen · Gunung Timang</b><span class="v">✓ Panen TBS · ✓ K3 egrek</span></div></div>
+      <p class="note">Contoh tampilan. Dibuka setelah angkatan kelas pertama lulus.</p></div>
+  </div>
+</section>
+
+<!-- ===================== KEBUN BARU ===================== -->
+<section id="kebun-baru">
+  <div class="plan">
+    <div class="head" style="margin:0"><span class="lab">Buka kebun baru</span><h2>Rencanakan sebelum menanam.</h2>
+      <p class="mut">Dari data elevasi satelit, cekungan rawan genangan ditandai supaya parit dibuat lebih dulu. Lalu titik pancang digambar dengan pola segitiga sama sisi, supaya tiap pokok dapat cahaya merata selama ±25 tahun.</p>
+      <div class="facts"><div><b id="fS">9 m</b><span>jarak antar pokok</span></div><div><b id="fR">7,8 m</b><span>jarak antar baris</span></div><div><b id="fN">±143</b><span>pokok per hektar</span></div></div>
+      <div class="calc"><label>Luas lahan (ha)<input type="number" inputmode="decimal" id="pL" value="2" min="0.1" step="0.1"></label>
+        <label>Jarak tanam<select id="pS"><option value="8.5">8,5 m</option><option value="9" selected>9 m</option><option value="9.5">9,5 m</option></select></label></div>
+      <div class="gain" id="pG" aria-live="polite"></div>
+    </div>
+    <svg viewBox="0 0 320 240" role="img" aria-label="Pola tanam segitiga dengan area rawan genangan">
+      <defs><radialGradient id="pond"><stop offset="0" stop-color="#3b82c4" stop-opacity=".45"/><stop offset="1" stop-color="#3b82c4" stop-opacity="0"/></radialGradient></defs>
+      <ellipse cx="238" cy="172" rx="70" ry="48" fill="url(#pond)"/>
+      <path d="M180 214 C215 190 250 196 300 150" fill="none" stroke="#3b82c4" stroke-width="3" stroke-dasharray="6 5"/>
+      <text x="190" y="232" font-size="11" fill="var(--muted)" font-family="inherit">parit drainase</text>
+      <g id="pts"></g>
+      <path id="tri" d="M40 40 L76 40 L58 71.2 Z" stroke="var(--soil)" stroke-width="1.5" fill="none"/>
+      <text x="48" y="32" font-size="11" fill="var(--soil)" font-weight="700" font-family="inherit" id="tS">9 m</text>
+      <text x="206" y="140" font-size="11" fill="var(--muted)" font-family="inherit">rawan genang</text>
+    </svg>
+  </div>
+</section>
+
+<section id="tanya">
+  <div class="head"><span class="lab">Pertanyaan</span><h2>Yang sering ditanya.</h2></div>
+  <details><summary>Benar gratis?</summary><p>Ya. Laporan kesehatan kebun dan konsultasi dengan asisten gratis selama program percontohan di Barito Utara. Kalau nanti ada layanan berbayar, harganya diumumkan di depan dan kamu bebas memilih.</p></details>
+  <details><summary>Apakah laporannya bisa disimpan?</summary><p>Bisa. Setelah laporan jadi, tekan "Unduh laporan PDF". File PDF tersimpan di HP dan bisa dibuka tanpa internet, dicetak, atau dikirim lewat WhatsApp ke keluarga atau kelompok tani.</p></details>
+  <details><summary>Seberapa tajam hasilnya?</summary><p>Satu kotak = 10 × 10 m, kira-kira 1 sampai 2 pokok. Cukup untuk menemukan bagian kebun yang bermasalah, tapi tidak bisa menghitung buah per pokok. Setiap laporan menulis tanggal foto dan tingkat keyakinan datanya.</p></details>
+  <details><summary>Bagaimana kalau batas yang digambar AI salah?</summary><p>Itu bisa terjadi, terutama kalau kebunmu bersebelahan dengan kebun sawit lain yang umurnya sama, karena dari atas kelihatan menyatu. Tekan "Geser titik" dan pindahkan titik kuning ke batas yang benar. Kalau masih bingung, kirim nama desa dan patokan ke WhatsApp, tim kami yang menandai.</p></details>
+  <details><summary>Data lokasi kebun saya dipakai untuk apa?</summary><p>Untuk membuat laporan kebunmu dan, dengan persetujuanmu, untuk memperbaiki peta sawit Barito Utara. Nomor HP dan lokasi kebun tidak dijual. Minta hapus kapan saja lewat WhatsApp.</p></details>
+  <details><summary>Apakah asisten AI bisa salah?</summary><p>Bisa. Asisten hanya menjelaskan angka dari satelit dan tidak melihat kebunmu langsung. Untuk dosis pupuk dan pestisida, ikuti label produk dan tanyakan ke penyuluh pertanian (PPL) setempat.</p></details>
+  <details><summary>Siapa di balik Plantandan?</summary><p>Plantandan dirintis oleh <a href="/">Andra Dimas</a>, anak Muara Teweh yang kuliah teknik elektro dan komputer. Kami mencari petani, mandor, dan kelompok tani di Barito Utara yang mau ikut mencoba.</p></details>
+</section>
+
+<section class="final" id="daftar">
+  <span class="lab" style="color:inherit;opacity:.8">Mulai sekarang</span>
+  <h2>Kebunmu, dibaca dari langit.</h2>
+  <p>Cek langsung di website ini, atau hubungi kami lewat WhatsApp kalau butuh dibantu menandai patok.</p>
+  <div class="ctas"><a class="btn light" href="#cek">Cek kebun gratis</a><a class="btn out js-wa" href="#daftar" data-msg="Halo Plantandan, saya mau dibantu cek kebun sawit saya."><svg><use href="#wa"/></svg>WhatsApp <span id="waNum"></span></a></div>
+</section>
+
+<footer><span>© 2026 Plantandan · Barito Utara, Kalimantan Tengah</span><span>Dirintis oleh <a href="/">Andra Dimas</a> · Citra: Copernicus Sentinel-2 (ESA) · Peta dasar: Esri World Imagery</span></footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+/* =================== PENGATURAN =================== */
+var CONFIG={
+  API_URL:"",        // contoh "https://plantandan-api.vercel.app"  · kosong = mode contoh
+  WA_NUMBER:""       // contoh "6281234567890"
+};
+</script>
+<script>
+(function(){
+'use strict';
+var $=function(s,r){return (r||document).querySelector(s);},$$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s));};
+function esc(t){return String(t==null?'':t).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function f(n,d){return Number(n).toFixed(d==null?2:d).replace('.',',');}
+var store={get:function(k){try{return JSON.parse(localStorage.getItem(k));}catch(e){return null;}},set:function(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}};
+var DEMO=!CONFIG.API_URL;
+
+/* ---------- WhatsApp ---------- */
+if(CONFIG.WA_NUMBER){$('#waNum').textContent='+'+CONFIG.WA_NUMBER;
+  $$('.js-wa').forEach(function(a){a.href='https://wa.me/'+CONFIG.WA_NUMBER+'?text='+encodeURIComponent(a.getAttribute('data-msg'));a.target='_blank';a.rel='noopener';});}
+
+/* ---------- pixel illustration ---------- */
+(function(){var s='',k=0;for(var y=0;y<5;y++)for(var x=0;x<9;x++){var v=(x>6&&y>1)?(x>7&&y>2?'var(--bad)':'var(--warn)'):'var(--ok)';
+  s+='<rect x="'+(10+x*16)+'" y="'+(6+y*16)+'" width="15" height="15" rx="2" fill="'+v+'" opacity="'+(.75+((x*3+y*5)%4)*.06)+'"/>';}
+  s+='<g fill="none" stroke="var(--paper)" stroke-width="1.4"><circle cx="34" cy="29" r="9"/><circle cx="66" cy="45" r="9"/><circle cx="98" cy="29" r="9"/><circle cx="130" cy="61" r="9"/></g>';
+  $('#pixSvg').innerHTML=s;})();
+
+/* =================== PETA: KETUK SEKALI, BATAS DIGAMBAR OTOMATIS =================== */
+var map=null,poly=null,markers=[],pts=[],overlay=null,lastResult=null,phase='find',confirmed=false;
+var hasL=typeof L!=='undefined';
+function areaHa(c){if(c.length<3)return 0;var lat0=c.reduce(function(a,p){return a+p[1];},0)/c.length*Math.PI/180,R=6371008.8;
+  var xy=c.map(function(p){return [p[0]*Math.PI/180*R*Math.cos(lat0),p[1]*Math.PI/180*R];}),s=0;
+  for(var i=0;i<xy.length;i++){var a=xy[i],b=xy[(i+1)%xy.length];s+=a[0]*b[1]-b[0]*a[1];}return Math.abs(s)/2/1e4;}
+function guide(html){$('#guide').innerHTML=html;}
+function redraw(){
+  $('#chip').hidden=pts.length<3;$('#pN').textContent=pts.length;$('#pA').textContent=f(areaHa(pts));
+  $('#confirm').hidden=!(pts.length>=3&&phase!=='find');
+  $('#okBtn').hidden=confirmed;
+  if(!map)return;
+  markers.forEach(function(m){map.removeLayer(m);});markers=[];
+  var edit=phase==='edit';
+  pts.forEach(function(p,i){var m=L.marker([p[1],p[0]],{draggable:edit,keyboard:false,icon:L.divIcon({className:'',
+      html:'<div style="width:'+(edit?22:12)+'px;height:'+(edit?22:12)+'px;border-radius:50%;background:'+(confirmed?'#2f8f4e':'#e6a417')+';border:'+(edit?3:2)+'px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.45)"></div>',
+      iconSize:[edit?22:12,edit?22:12],iconAnchor:[edit?11:6,edit?11:6]})}).addTo(map);
+    if(edit){m.on('dragend',function(e){var ll=e.target.getLatLng();pts[i]=[ll.lng,ll.lat];redraw();});
+      m.on('dblclick contextmenu',function(){if(pts.length>3){pts.splice(i,1);redraw();}});}
+    markers.push(m);});
+  if(poly){map.removeLayer(poly);poly=null;}
+  if(pts.length>=3)poly=L.polygon(pts.map(function(p){return [p[1],p[0]];}),{color:confirmed?'#7cc46a':'#fffdf6',weight:2.5,fillColor:confirmed?'#2f8f4e':'#e6a417',fillOpacity:.18,interactive:false}).addTo(map);
+}
+/* sisipkan titik baru di sisi terdekat (mode geser) */
+function insertPt(lon,lat){var best=0,bd=1e18,k=Math.cos(lat*Math.PI/180);
+  for(var i=0;i<pts.length;i++){var a=pts[i],b=pts[(i+1)%pts.length],ax=a[0]*k,ay=a[1],bx=b[0]*k,by=b[1],px=lon*k,py=lat,
+    dx=bx-ax,dy=by-ay,t=Math.max(0,Math.min(1,((px-ax)*dx+(py-ay)*dy)/((dx*dx+dy*dy)||1e-18))),qx=ax+t*dx-px,qy=ay+t*dy-py,d=qx*qx+qy*qy;
+    if(d<bd){bd=d;best=i;}}
+  pts.splice(best+1,0,[lon,lat]);redraw();}
+
+function detect(lon,lat){
+  phase='busy';confirmed=false;pts=[];redraw();
+  guide('⏳ <b>Mencari batas kebunmu dari foto satelit…</b> biasanya 10–20 detik.');
+  var marker=L.circleMarker([lat,lon],{radius:8,color:'#fff',weight:3,fillColor:'#e6a417',fillOpacity:1}).addTo(map);
+  var job=DEMO?new Promise(function(r){setTimeout(function(){r(fakeBatas(lon,lat));},1200);}):
+    fetch(CONFIG.API_URL.replace(/\/$/,'')+'/api/batas',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({titik:[lon,lat]})})
+      .then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.error||'Gagal');return j;});});
+  job.then(function(j){map.removeLayer(marker);pts=j.patok;phase='proposed';redraw();
+      map.fitBounds(pts.map(function(p){return [p[1],p[0]];}),{maxZoom:18,padding:[40,40]});
+      guide('<b>Apakah garis ini batas kebunmu?</b> Luasnya ±'+f(areaHa(pts))+' ha. '+(j.catatan?esc(j.catatan)+' ':'')+'Kalau ada yang meleset, tekan <b>Geser titik</b>.');})
+     .catch(function(e){map.removeLayer(marker);phase='find';redraw();guide('⚠️ '+esc(e.message==='Failed to fetch'?'Tidak tersambung. Cek internet lalu ketuk lagi.':e.message)+' Ketuk lagi di tengah kebunmu, atau minta dibantu lewat WhatsApp.');});
+}
+if(hasL){
+  map=L.map('map',{zoomControl:true,attributionControl:true,doubleClickZoom:false}).setView([-0.95,114.89],11);
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,maxNativeZoom:18,attribution:'Esri, Maxar, Earthstar Geographics'}).addTo(map);
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,maxNativeZoom:18,opacity:.9}).addTo(map);
+  map.on('click',function(e){var ll=e.latlng;
+    if(phase==='find'){if(map.getZoom()<14){map.setView(ll,16);guide('<b>Sudah lebih dekat.</b> Sekarang ketuk sekali di tengah kebunmu.');return;}detect(ll.lng,ll.lat);}
+    else if(phase==='edit')insertPt(ll.lng,ll.lat);});
+}else{$('#map').innerHTML='<p style="color:#fff;padding:20px">Peta tidak bisa dimuat. Minta dibantu lewat WhatsApp.</p>';}
+
+$('#okBtn').onclick=function(){confirmed=true;phase='proposed';redraw();guide('✅ <b>Kebun tersimpan ('+f(areaHa(pts))+' ha).</b> Lanjut isi nama dan nomor WhatsApp di bawah.');
+  var n=$('[name=nama]');if(n)setTimeout(function(){n.focus({preventScroll:true});n.scrollIntoView({behavior:'smooth',block:'center'});},300);};
+$('#editBtn').onclick=function(){confirmed=false;phase='edit';redraw();guide('<b>Geser titik kuning</b> ke batas yang benar. Ketuk garis untuk menambah titik, ketuk dua kali titik untuk menghapusnya. Selesai? Tekan <b>✓ Ya, ini kebun saya</b>.');};
+$('#againBtn').onclick=function(){confirmed=false;phase='find';pts=[];redraw();guide('<b>👆 Ketuk sekali di tengah kebunmu.</b>');};
+
+/* cari desa (OpenStreetMap Nominatim, dibatasi Barito Utara) */
+function geocode(q){return fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=id&viewbox=114.2,0.6,115.9,-1.6&bounded=1&q='+encodeURIComponent(q)).then(function(r){return r.json();}).then(function(j){return j&&j[0]?j[0]:null;});}
+function cari(){var d=$('#desa').value.trim(),k=$('#kec').value;if(!d&&!k)return;if(!map)return;
+  var tries=[d&&k?d.split(',')[0]+', '+k:null,d?d.split(',')[0]:null,k?'Kecamatan '+k+', Barito Utara':null].filter(Boolean),i=0;
+  (function next(){if(i>=tries.length){guide('Desa belum ada di peta. Geser dan perbesar peta sendiri, lalu ketuk kebunmu.');return;}
+    geocode(tries[i++]).then(function(r){if(r){map.setView([+r.lat,+r.lon],i===tries.length&&!d?13:15);guide('<b>👆 Ketuk sekali di tengah kebunmu.</b> Geser peta kalau kebun belum terlihat.');}else next();}).catch(function(){guide('Pencarian gagal. Geser peta sendiri, lalu ketuk kebunmu.');});})();}
+$('#qBtn').onclick=cari;$('#desa').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();cari();}});
+$('#kec').addEventListener('change',function(){if(!$('#desa').value.trim())cari();});
+
+/* mode contoh: batas buatan berbentuk tidak beraturan ±2 ha di sekitar titik */
+function fakeBatas(lon,lat){var n=9,out=[],k=Math.cos(lat*Math.PI/180);for(var i=0;i<n;i++){var a=i/n*2*Math.PI,r=(70+18*Math.sin(i*2.3)+10*Math.cos(i*1.7))/111320;
+  out.push([lon+r*Math.cos(a)*1.25/k,lat+r*Math.sin(a)*.8]);}return {patok:out,catatan:'(Mode contoh: batas ini buatan.)'};}
+
+function showErr(m){var e=$('#err');e.textContent=m||'';e.hidden=!m;if(m&&m.length)e.scrollIntoView({block:'center',behavior:'smooth'});}
+
+/* =================== KIRIM =================== */
+var BBOX=[114.2,-1.6,115.9,0.6];
+$('#form').addEventListener('submit',function(e){e.preventDefault();showErr('');
+  var fd=new FormData(this),pr={nama:(fd.get('nama')||'').trim(),wa:(fd.get('wa')||'').trim(),kecamatan:fd.get('kecamatan'),desa:(fd.get('desa')||'').trim(),tahunTanam:(fd.get('tahunTanam')||'').trim()};
+  if(!pr.kecamatan||!pr.desa)return showErr('Pilih kecamatan dan isi desa di langkah 1.');
+  if(pts.length<3)return showErr('Ketuk kebunmu di peta (langkah 1) dulu.');
+  if(!confirmed)return showErr('Tekan "✓ Ya, ini kebun saya" di bawah peta setelah batasnya pas.');
+  if(!pr.nama||!pr.wa)return showErr('Isi nama dan nomor WhatsApp di langkah 2.');
+  var ha=areaHa(pts);if(ha<0.05)return showErr('Luas di bawah 0,05 ha. Geser titik supaya sesuai batas kebun.');if(ha>100)return showErr('Lebih dari 100 ha. Untuk kebun besar, hubungi kami lewat WhatsApp.');
+  if(pts.some(function(p){return p[0]<BBOX[0]||p[0]>BBOX[2]||p[1]<BBOX[1]||p[1]>BBOX[3];}))return showErr('Saat ini Plantandan baru melayani kebun di Barito Utara.');
+  if(!fd.get('setuju'))return showErr('Centang persetujuan pemakaian data dulu.');
+  run(pr);});
+
+function progress(n){$$('#prog li').forEach(function(li,i){li.className=i<n?'done':i===n?'on':'';});}
+function run(pr){
+  var go=$('#go');go.disabled=true;go.textContent='Sedang dianalisis…';$('#prog').hidden=false;var st=0;progress(0);
+  var timer=setInterval(function(){if(st<3){st++;progress(st);}},DEMO?700:9000);
+  var patok=pts.map(function(p){return [p[0],p[1]];});
+  var job=DEMO?new Promise(function(r){setTimeout(function(){r(fakeResult(patok,pr));},3000);}):
+    fetch(CONFIG.API_URL.replace(/\/$/,'')+'/api/cek',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({patok:patok,profil:pr,setuju:true})})
+      .then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.error||'Gagal');return j;});});
+  job.then(function(j){j.patok=patok;j.riwayat=[];j.demo=DEMO;store.set('plantandan.kebun',j);show(j);})
+     .catch(function(err){showErr(err.message==='Failed to fetch'?'Tidak tersambung ke server. Cek internet, lalu coba lagi.':err.message);})
+     .then(function(){clearInterval(timer);progress(4);go.disabled=false;go.textContent='Buat laporan kebun saya';setTimeout(function(){$('#prog').hidden=true;},800);});
+}
+
+/* =================== TAMPILKAN LAPORAN =================== */
+function show(j){
+  lastResult=j;var s=j.statistik,l=j.laporan||{};
+  $('#demoBanner').hidden=!j.demo;
+  $('#res').hidden=false;$('#resume').hidden=true;
+  $('#rId').textContent='Laporan '+(j.id||'')+' · '+(j.profil&&j.profil.desa?j.profil.desa+', ':'')+(j.profil?j.profil.kecamatan:'');
+  $('#rTitle').textContent=l.judul||'Laporan kebun';$('#rSum').textContent=l.ringkasan||'';
+  $('#kpis').innerHTML=[
+    [f(s.luasHa)+' ha','luas kebun'],[f(s.ndvi.median),'hijau daun (median)'],[s.citraTerbaru?tgl(s.citraTerbaru):'–','foto satelit terbaru'],[s.keyakinan,'keyakinan data · '+f(s.pengamatanBersihPerPiksel,1)+' foto bersih/kotak']
+  ].map(function(k){return '<div class="kpi"><b>'+esc(k[0])+'</b><span>'+esc(k[1])+'</span></div>';}).join('');
+  var zp=s.zonaPersen,zh=s.zonaHa;
+  $('#zbar').innerHTML='<i style="width:'+zp.normal+'%;background:var(--ok)"></i><i style="width:'+zp.kuning+'%;background:var(--warn)"></i><i style="width:'+zp.merah+'%;background:var(--bad)"></i>';
+  $('#zleg').innerHTML='<span><i style="background:var(--ok)"></i>Normal '+f(zh.normal)+' ha ('+zp.normal+'%)</span><span><i style="background:var(--warn)"></i>Perlu dicek '+f(zh.kuning)+' ha ('+zp.kuning+'%)</span><span><i style="background:var(--bad)"></i>Tindakan '+f(zh.merah)+' ha ('+zp.merah+'%)</span>'+(s.cekungHa?'<span><i style="background:var(--water)"></i>Rawan genang ±'+f(s.cekungHa)+' ha</span>':'');
+  spark(s.grafikBulanan||[],s.trenNdviPerTahun);
+  function list(t,a){return a&&a.length?'<div><h4>'+t+'</h4><ul>'+a.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>':'';}
+  $('#rep').innerHTML=list('Arti angkanya',l.angka)+list('Yang perlu dicek di kebun',l.cekLapangan)+list('Rencana 3 bulan ke depan',l.rencana3Bulan)+list('Rencana 1–3 tahun',l.rencanaJangkaPanjang);
+  $('#rConf').textContent=l.catatanKeyakinan||'';
+  setOverlay('ndvi');
+  pts=j.patok.slice();confirmed=true;phase='proposed';redraw();if(map)map.fitBounds(pts.map(function(p){return [p[1],p[0]];}),{maxZoom:18,padding:[20,20]});
+  renderLog();
+  $('#sugs').innerHTML=['Apa yang harus saya cek minggu ini?','Kenapa ada bagian yang pucat?','Apakah kebun saya membaik dari tahun lalu?','Bagian mana yang rawan banjir?','Kapan waktu yang baik untuk memupuk?'].map(function(q){return '<button type="button">'+esc(q)+'</button>';}).join('');
+  $$('#sugs button').forEach(function(b){b.onclick=function(){ask(b.textContent);};});
+  $('#res').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function tgl(iso){var d=new Date(iso+'T00:00:00Z'),b=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];return d.getUTCDate()+' '+b[d.getUTCMonth()]+' '+d.getUTCFullYear();}
+function spark(g,tren){var svg=$('#spark');if(!g.length){svg.innerHTML='<text x="20" y="80" fill="var(--muted)" font-size="14">Belum cukup data riwayat.</text>';return;}
+  var W=600,H=180,P=34,mn=Math.min.apply(null,g.map(function(x){return x[1];}))-.05,mx=Math.max.apply(null,g.map(function(x){return x[1];}))+.05;
+  var X=function(i){return P+i*(W-2*P)/Math.max(1,g.length-1);},Y=function(v){return H-P-(v-mn)/(mx-mn)*(H-2*P);};
+  var d=g.map(function(x,i){return (i?'L':'M')+X(i).toFixed(1)+' '+Y(x[1]).toFixed(1);}).join(' ');
+  var yrs='';g.forEach(function(x,i){if(x[0].slice(5)==='01')yrs+='<text x="'+X(i)+'" y="'+(H-8)+'" font-size="18" fill="var(--muted)" text-anchor="middle">'+x[0].slice(0,4)+'</text>';});
+  var tt=tren==null?'':(tren>0.01?'Cenderung membaik':tren<-0.01?'Cenderung menurun':'Stabil')+' ('+(tren>0?'+':'')+f(tren,3)+'/tahun)';
+  svg.innerHTML='<path d="'+d+'" fill="none" stroke="var(--palm2)" stroke-width="2.5" stroke-linejoin="round"/>'+g.map(function(x,i){return '<circle cx="'+X(i).toFixed(1)+'" cy="'+Y(x[1]).toFixed(1)+'" r="2.5" fill="var(--palm)"><title>'+x[0]+': '+f(x[1])+'</title></circle>';}).join('')+yrs+
+    '<text x="'+P+'" y="22" font-size="20" font-weight="700" fill="var(--ink)">'+esc(tt)+'</text>';}
+function setOverlay(k){$$('.ovl button').forEach(function(b){b.setAttribute('aria-pressed',b.getAttribute('data-o')===k?'true':'false');});
+  if(!map||!lastResult)return;if(overlay){map.removeLayer(overlay);overlay=null;}
+  var url=lastResult.statistik.peta&&lastResult.statistik.peta[k];if(!url)return;
+  var la=lastResult.patok.map(function(p){return p[1];}),lo=lastResult.patok.map(function(p){return p[0];});
+  overlay=L.imageOverlay(url,[[Math.min.apply(null,la),Math.min.apply(null,lo)],[Math.max.apply(null,la),Math.max.apply(null,lo)]],{opacity:.85}).addTo(map);}
+$$('.ovl button').forEach(function(b){b.onclick=function(){setOverlay(b.getAttribute('data-o'));};});
+
+/* =================== KONSULTASI =================== */
+function renderLog(){var r=lastResult.riwayat||[];$('#log').innerHTML=r.length?r.map(function(m){return '<div class="msg '+(m.role==='user'?'out':'in')+'">'+esc(m.content)+'</div>';}).join(''):'<div class="msg in">Halo'+(lastResult.profil&&lastResult.profil.nama?' '+esc(lastResult.profil.nama):'')+'! Saya sudah membaca data kebunmu. Mau tanya apa?</div>';
+  var lg=$('#log');lg.scrollTop=lg.scrollHeight;}
+function ask(q){q=(q||'').trim();if(!q||!lastResult)return;var r=lastResult.riwayat=lastResult.riwayat||[];
+  var prev=r.slice();r.push({role:'user',content:q});r.push({role:'assistant',content:'…'});renderLog();$('#askIn').value='';
+  var job=lastResult.demo?new Promise(function(res){setTimeout(function(){res({jawaban:'(Mode contoh) Setelah server tersambung, jawaban di sini ditulis asisten AI dari data kebunmu: luas '+f(lastResult.statistik.luasHa)+' ha, '+lastResult.statistik.zonaPersen.kuning+'% perlu dicek. Untuk sekarang, mulai dari kotak kuning terdekat dengan jalan.'});},900);}):
+    fetch(CONFIG.API_URL.replace(/\/$/,'')+'/api/tanya',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id:lastResult.id,statistik:Object.assign({},lastResult.statistik,{peta:undefined}),profil:lastResult.profil,riwayat:prev,pertanyaan:q})})
+      .then(function(x){return x.json().then(function(j){if(!x.ok)throw new Error(j.error||'Gagal');return j;});});
+  job.then(function(j){r[r.length-1].content=j.jawaban;}).catch(function(e){r[r.length-1].content='Maaf, '+(e.message||'gagal')+'.';})
+     .then(function(){store.set('plantandan.kebun',lastResult);renderLog();});}
+$('#ask').addEventListener('submit',function(e){e.preventDefault();ask($('#askIn').value);});
+$('#newBtn').onclick=function(){$('#res').hidden=true;pts=[];confirmed=false;phase='find';redraw();guide('<b>👆 Ketuk sekali di tengah kebunmu.</b>');if(overlay&&map){map.removeLayer(overlay);overlay=null;}$('#form').scrollIntoView({behavior:'smooth'});};
+var saved=store.get('plantandan.kebun');
+if(saved&&saved.statistik){$('#resume').hidden=false;$('#resumeBtn').onclick=function(){show(saved);};}
+else $('#resume').hidden=true;
+
+/* =================== LAPORAN PDF (dibuat di HP, tanpa server) =================== */
+function asc(t){return String(t==null?'':t).replace(/[−–—]/g,'-').replace(/[≥]/g,'>=').replace(/[≤]/g,'<=').replace(/[→]/g,'->').replace(/[≈]/g,'~').replace(/[“”]/g,'"').replace(/[‘’]/g,"'").replace(/[^\x09\x0A\x0D\x20-\x7E -ÿ]/g,'');}
+function buatPDF(j){
+  if(!window.jspdf){$('#pdfBtn').textContent='PDF belum siap, cek internet lalu coba lagi';return;}
+  var doc=new window.jspdf.jsPDF({unit:'mm',format:'a4'}),s=j.statistik,l=j.laporan||{},pr=j.profil||{};
+  var M=16,Wd=210-2*M,y=0,GREEN=[31,107,58],SOIL=[181,84,28],INK=[29,42,31],MUT=[93,107,92];
+  function col(c){doc.setTextColor(c[0],c[1],c[2]);}
+  function need(h){if(y+h>282){doc.addPage();y=18;}}
+  function text(t,size,style,c,gap){doc.setFont('helvetica',style||'normal');doc.setFontSize(size);col(c||INK);
+    if(size>12)y+=size*0.15;var lines=doc.splitTextToSize(asc(t),Wd);lines.forEach(function(ln){need(size*0.45);doc.text(ln,M,y);y+=size*0.45;});y+=(gap==null?2:gap);}
+  function label(t){need(10);y+=2;doc.setFont('helvetica','bold');doc.setFontSize(8);col(SOIL);doc.text(asc(t).toUpperCase(),M,y);y+=5;}
+  function bullets(a){(a||[]).forEach(function(b){doc.setFont('helvetica','normal');doc.setFontSize(10.5);col(INK);
+    var lines=doc.splitTextToSize(asc(b),Wd-6);need(lines.length*4.8);doc.text('•',M+1,y);lines.forEach(function(ln){doc.text(ln,M+6,y);y+=4.8;});y+=1;});y+=2;}
+  // kop
+  doc.setFillColor(GREEN[0],GREEN[1],GREEN[2]);doc.rect(0,0,210,14,'F');doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(13);doc.text('Plantandan',M,9.3);
+  doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.text('Laporan kesehatan kebun sawit · andradimasng.tech/plantandan',210-M,9.3,{align:'right'});
+  y=24;label('Laporan '+(j.id||'')+(j.demo?' (CONTOH, bukan data sungguhan)':''));
+  text(l.judul||'Laporan kebun',17,'bold',INK,2);
+  text([pr.nama,pr.desa,pr.kecamatan,'Barito Utara'].filter(Boolean).join(' · ')+' · dibuat '+new Date().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}),9,'normal',MUT,4);
+  text(l.ringkasan||'',11,'normal',INK,4);
+  // angka utama
+  var K=[[f(s.luasHa)+' ha','luas kebun'],[f(s.ndvi.median),'hijau daun (NDVI median)'],[s.citraTerbaru?tgl(s.citraTerbaru):'-','foto satelit terbaru'],[s.keyakinan,'keyakinan data'],
+    [f(s.zonaHa.kuning)+' ha','perlu dicek ('+s.zonaPersen.kuning+'%)'],[f(s.zonaHa.merah)+' ha','perlu tindakan ('+s.zonaPersen.merah+'%)'],[s.cekungHa?('±'+f(s.cekungHa)+' ha'):'-','rawan genang'],
+    [s.trenNdviPerTahun==null?'-':((s.trenNdviPerTahun>0?'+':'')+f(s.trenNdviPerTahun,3)),'tren hijau per tahun']];
+  need(40);var bw=(Wd-9)/4;K.forEach(function(k,i){var x=M+(i%4)*(bw+3),yy=y+Math.floor(i/4)*19;doc.setDrawColor(226,220,203);doc.roundedRect(x,yy,bw,16,2,2,'S');
+    doc.setFont('helvetica','bold');doc.setFontSize(12.5);col(INK);doc.text(asc(k[0]),x+3,yy+7);doc.setFont('helvetica','normal');doc.setFontSize(7.5);col(MUT);doc.text(doc.splitTextToSize(asc(k[1]),bw-5),x+3,yy+11.5);});
+  y+=41;
+  // bar zona
+  var zp=s.zonaPersen,x0=M,cols=[[47,143,78],[230,164,23],[196,66,29]];[zp.normal,zp.kuning,zp.merah].forEach(function(p,i){var w=Wd*p/100;doc.setFillColor(cols[i][0],cols[i][1],cols[i][2]);if(w>0)doc.rect(x0,y,w,4,'F');x0+=w;});
+  y+=8;text('Hijau = normal '+zp.normal+'% · kuning = perlu dicek '+zp.kuning+'% · merah = perlu tindakan '+zp.merah+'%',8.5,'normal',MUT,4);
+  // peta
+  peta(s.peta&&s.peta.ndvi,'Peta hijau daun per kotak 10 m');
+  if(s.peta&&s.peta.zona)peta(s.peta.zona,'Peta zona perlu dicek (kuning dan merah)');
+  // grafik riwayat
+  var g=s.grafikBulanan||[];if(g.length>2){need(60);label('Riwayat hijau daun sejak 2023');var gx=M,gy=y,gw=Wd,gh=38,vs=g.map(function(a){return a[1];}),mn=Math.min.apply(null,vs)-.05,mx=Math.max.apply(null,vs)+.05;
+    doc.setDrawColor(226,220,203);doc.rect(gx,gy,gw,gh);doc.setDrawColor(47,143,78);doc.setLineWidth(.6);
+    for(var i=1;i<g.length;i++){var X1=gx+(i-1)/(g.length-1)*gw,X2=gx+i/(g.length-1)*gw,Y1=gy+gh-(g[i-1][1]-mn)/(mx-mn)*gh,Y2=gy+gh-(g[i][1]-mn)/(mx-mn)*gh;doc.line(X1,Y1,X2,Y2);}
+    doc.setLineWidth(.2);doc.setFontSize(7.5);col(MUT);g.forEach(function(a,i){if(a[0].slice(5)==='01')doc.text(a[0].slice(0,4),gx+i/(g.length-1)*gw,gy+gh+4,{align:'center'});});
+    doc.text(f(mx,2),gx-1,gy+3,{align:'right'});doc.text(f(mn,2),gx-1,gy+gh,{align:'right'});y=gy+gh+9;}
+  label('Arti angkanya');bullets(l.angka);
+  label('Yang perlu dicek di kebun');bullets(l.cekLapangan);
+  label('Rencana 3 bulan ke depan');bullets(l.rencana3Bulan);
+  label('Rencana 1-3 tahun');bullets(l.rencanaJangkaPanjang);
+  if(l.catatanKeyakinan){label('Catatan keyakinan');text(l.catatanKeyakinan,10,'italic',MUT,3);}
+  var qa=(j.riwayat||[]).filter(function(m){return m.content&&m.content!=='…';});
+  if(qa.length){label('Tanya jawab dengan asisten');qa.forEach(function(m){text((m.role==='user'?'Tanya: ':'Jawab: ')+m.content,9.5,m.role==='user'?'bold':'normal',m.role==='user'?INK:MUT,1.5);});y+=2;}
+  label('Cara laporan ini dibuat');
+  text('Foto satelit Sentinel-2 (ESA, resolusi 10 m) dari '+s.jendelaHari+' hari terakhir; '+s.jumlahCitra+' foto, rata-rata '+f(s.pengamatanBersihPerPiksel,1)+' foto bersih per kotak setelah awan dibuang (Cloud Score+). Hijau daun diukur dengan NDVI. Zona dibandingkan dengan median kebun ini sendiri: kuning 0,05-0,12 di bawah median, merah lebih dari 0,12 di bawah median atau NDVI di bawah 0,45. Area rawan genang diperkirakan dari Copernicus DEM 30 m (kasar). Teks laporan ditulis asisten AI dari angka-angka tersebut.',9,'normal',MUT,2);
+  text('Batasan: satelit hanya melihat dari atas; satu kotak 10 x 10 m = kira-kira 1-2 pokok. Laporan ini petunjuk di mana harus mencari, bukan diagnosis. Untuk dosis pupuk dan pestisida, ikuti label produk dan tanyakan penyuluh pertanian (PPL).',9,'normal',MUT,3);
+  label('Titik batas kebun (lintang, bujur)');
+  text((j.patok||[]).map(function(p,i){return (i+1)+') '+p[1].toFixed(6)+', '+p[0].toFixed(6);}).join('   '),8,'normal',MUT,2);
+  var n=doc.getNumberOfPages();for(var p=1;p<=n;p++){doc.setPage(p);doc.setFontSize(7.5);col(MUT);doc.text('Plantandan · '+asc(j.id||'')+' · laporan ini bukan pengganti cek lapangan',M,292);doc.text('Halaman '+p+'/'+n,210-M,292,{align:'right'});}
+  doc.save('Laporan-Plantandan-'+asc((pr.nama||'kebun').replace(/\s+/g,'-'))+'-'+(j.id||'')+'.pdf');
+
+  function peta(src,judul){var P=j.patok||[];if(P.length<3)return;need(70);label(judul);
+    var lo=P.map(function(p){return p[0];}),la=P.map(function(p){return p[1];}),x1=Math.min.apply(null,lo),x2=Math.max.apply(null,lo),y1=Math.min.apply(null,la),y2=Math.max.apply(null,la);
+    var k=Math.cos((y1+y2)/2*Math.PI/180),wM=(x2-x1)*k,hM=(y2-y1),sc=Math.min(Wd/wM,110/hM),w=wM*sc,h=hM*sc,ox=M+(Wd-w)/2;need(h+12);var oy=y;
+    doc.setFillColor(246,243,234);doc.rect(ox,oy,w,h,'F');
+    if(src&&/^data:image\/(png|jpe?g)/.test(src)){try{doc.addImage(src,src.indexOf('png')>0?'PNG':'JPEG',ox,oy,w,h);}catch(e){}}
+    doc.setDrawColor(29,42,31);doc.setLineWidth(.5);
+    for(var i=0;i<P.length;i++){var a=P[i],b=P[(i+1)%P.length];doc.line(ox+(a[0]-x1)*k*sc,oy+(y2-a[1])*sc,ox+(b[0]-x1)*k*sc,oy+(y2-b[1])*sc);}
+    doc.setLineWidth(.2);
+    // skala 
+    var m=Math.pow(10,Math.floor(Math.log10(wM*111320/3)));var bar=m/111320*sc;doc.setDrawColor(29,42,31);doc.line(ox,oy+h+4,ox+bar,oy+h+4);doc.setFontSize(7.5);col(MUT);doc.text(m+' m',ox+bar+2,oy+h+5);doc.text('Utara ke atas',ox+w,oy+h+5,{align:'right'});
+    y=oy+h+10;if(!src)text('(Gambar peta belum tersedia; garis menunjukkan batas kebun.)',8,'italic',MUT,2);}
+}
+
+$('#pdfBtn').onclick=function(){if(lastResult)buatPDF(lastResult);};$('#pdfBtn2').onclick=function(){if(lastResult)buatPDF(lastResult);};
+
+/* mode contoh: hasil buatan supaya alur bisa dicoba sebelum server siap */
+function fakeResult(patok,pr){var ha=areaHa(patok),g=[],t=0;for(var y=2023;y<=2026;y++)for(var m=1;m<=12;m++){if(y===2026&&m>10)break;t++;g.push([y+'-'+(m<10?'0':'')+m,+(0.74+0.04*Math.sin(t/2.2)-t*0.0012).toFixed(2)]);}
+  var img=null;try{var cv=document.createElement('canvas');cv.width=cv.height=240;var cx=cv.getContext('2d'),lo=patok.map(function(p){return p[0];}),la=patok.map(function(p){return p[1];}),
+    x1=Math.min.apply(null,lo),x2=Math.max.apply(null,lo),y1=Math.min.apply(null,la),y2=Math.max.apply(null,la);
+    cx.beginPath();patok.forEach(function(p,i){var X=(p[0]-x1)/(x2-x1)*240,Y=(y2-p[1])/(y2-y1)*240;i?cx.lineTo(X,Y):cx.moveTo(X,Y);});cx.closePath();cx.clip();
+    for(var gy=0;gy<24;gy++)for(var gx=0;gx<24;gx++){var dd=Math.hypot(gx-19,gy-15),v=.8-Math.max(0,.3-dd*.045)+.025*Math.sin(gx*1.7+gy)+((gx*7+gy*13)%5-2)*.012;cx.fillStyle=v>.7?'#1f6b3a':v>.62?'#7cc46a':v>.55?'#e6a417':'#c4421d';cx.fillRect(gx*10,gy*10,10,10);}
+    img=cv.toDataURL('image/png');}catch(e){}
+  return {id:'CONTOH',profil:pr,statistik:{luasHa:+ha.toFixed(2),jendelaHari:90,jumlahCitra:14,citraTerbaru:new Date(Date.now()-4*864e5).toISOString().slice(0,10),pengamatanBersihPerPiksel:4.2,keyakinan:'sedang',jumlahPiksel:Math.round(ha*100),
+    ndvi:{median:.74,p10:.61,p90:.81},zonaHa:{normal:+(ha*.78).toFixed(2),kuning:+(ha*.16).toFixed(2),merah:+(ha*.06).toFixed(2)},zonaPersen:{normal:78,kuning:16,merah:6},cekungHa:+(ha*.08).toFixed(2),elevasiMedianM:52,trenNdviPerTahun:-.014,grafikBulanan:g,peta:img?{ndvi:img}:{}},
+    laporan:{judul:'Contoh: kebun sebagian besar sehat, ada bagian kecil yang perlu dicek',ringkasan:'Ini contoh laporan. Setelah server tersambung, bagian ini ditulis asisten AI dari foto satelit kebunmu yang sebenarnya.',
+      angka:['Sekitar 8 dari 10 bagian kebun hijaunya normal.','Sekitar 16% lebih pucat dari rata-rata kebunmu sendiri; ini yang perlu didatangi dulu.','Kehijauan sedikit menurun sejak 2023, pelan tapi terus.'],
+      cekLapangan:['Datangi kotak kuning terdekat dari jalan.','Lihat pelepah bawah: menguning dari ujung atau tidak?','Cek piringan: tergenang atau penuh gulma?'],
+      rencana3Bulan:['Bersihkan piringan di zona kuning.','Perbaiki parit di bagian yang rawan genang sebelum puncak musim hujan.','Cek ulang lewat Plantandan setelah 1 bulan.'],
+      rencanaJangkaPanjang:['Catat hasil panen per blok supaya bisa dibandingkan dengan peta.','Rencanakan peremajaan kalau pokok sudah di atas 20–25 tahun.'],
+      catatanKeyakinan:'Contoh buatan; angka di atas bukan data kebunmu.'}};}
+
+/* =================== CONTOH RUTE =================== */
+var C=8,Rw=6,cells=[],grid=$('#grid'),letters='ABCDEF';
+function col(v){return v>=.65?'var(--ok)':v>=.45?'var(--warn)':'var(--bad)';}
+for(var y=0;y<Rw;y++)for(var x=0;x<C;x++){var v=.84-.04*Math.sin(x*1.3+y)-.02*y;if(x>=6&&y>=1&&y<=3)v-=.2+.03*(x-6);if(x>=6&&y>=4)v-=.33;
+  v=Math.max(.3,Math.min(.86,v+((x*7+y*13)%5-2)*.012));cells.push({x:x,y:y,v:+v.toFixed(2),id:letters[y]+(x+1)});}
+cells.forEach(function(c){var b=document.createElement('button');b.type='button';b.style.background=col(c.v);b.textContent=c.id;
+  b.setAttribute('aria-label','Blok '+c.id+', nilai '+f(c.v));b.setAttribute('aria-pressed','false');b.onclick=function(){pick(c,b);};grid.appendChild(b);});
+var mini=$('#mini');for(var y2=0;y2<4;y2++)for(var x2=0;x2<6;x2++){var c2=cells[Math.min(5,y2+1)*C+x2+2],i2=document.createElement('i');i2.style.background=col(c2.v);mini.appendChild(i2);}
+var bad=cells.filter(function(c){return c.v<.65;});
+function pick(c,btn){$$('#grid button').forEach(function(b){b.setAttribute('aria-pressed','false');});btn.setAttribute('aria-pressed','true');
+  $('#rBlk').textContent='Blok '+c.id;$('#rVal').textContent=f(c.v);var t=$('#rTag'),tx=$('#rTxt');
+  if(c.v>=.65){t.textContent='Normal';t.style.background='color-mix(in srgb,var(--ok) 20%,transparent)';t.style.color='var(--ok)';tx.textContent='Hijau rapat. Rawat seperti biasa.';}
+  else if(c.v>=.45){t.textContent='Perlu dicek';t.style.background='color-mix(in srgb,var(--warn) 22%,transparent)';t.style.color='var(--soil)';tx.textContent='Lebih pucat dari tetangganya. Cek pelepah bawah dan gulma di piringan.';}
+  else{t.textContent='Tindakan';t.style.background='color-mix(in srgb,var(--bad) 20%,transparent)';t.style.color='var(--bad)';tx.textContent=c.y>=4?'Pucat di bagian rendah. Cek genangan dan parit dulu.':'Sangat pucat. Cek pokok mati, hama, atau kurang hara berat.';}}
+var gate={x:0,y:0,id:'Gerbang'};function md(a,b){return Math.abs(a.x-b.x)+Math.abs(a.y-b.y);}
+function plen(P){var d=0;for(var i=1;i<P.length;i++)d+=md(P[i-1],P[i]);return d;}
+var R;(function(){var n=bad.length,F=1<<n,dp=new Float64Array(F*n).fill(1e9),pr=new Int16Array(F*n).fill(-1),i,j,m;
+  for(i=0;i<n;i++)dp[(1<<i)*n+i]=md(gate,bad[i]);
+  for(m=1;m<F;m++)for(i=0;i<n;i++){var v0=dp[m*n+i];if(!(m>>i&1)||v0>=1e9)continue;for(j=0;j<n;j++){if(m>>j&1)continue;var nm=m|1<<j,cc=v0+md(bad[i],bad[j]);if(cc<dp[nm*n+j]){dp[nm*n+j]=cc;pr[nm*n+j]=i;}}}
+  var best=1e9,last=0;for(i=0;i<n;i++){var cc2=dp[(F-1)*n+i]+md(bad[i],gate);if(cc2<best){best=cc2;last=i;}}
+  var seq=[],k=last;m=F-1;while(k>=0){seq.push(bad[k]);var pk=pr[m*n+k];m&=~(1<<k);k=pk;}R=[gate].concat(seq.reverse(),[gate]);})();
+var all=[gate];for(var yy=0;yy<Rw;yy++)for(var xx=0;xx<C;xx++){var q=yy%2?C-1-xx:xx;if(yy||q)all.push(cells[yy*C+q]);}all.push(gate);
+var dK=plen(R)*25,dA=plen(all)*25;function km(mm){return mm>=1000?f(mm/1000)+' km':mm+' m';}
+$('#dK').textContent=km(dK);$('#dA').textContent=km(dA);
+$('#rRt').textContent=R.map(function(c){return c.id;}).join(' → ')+' · hemat '+Math.round((1-dK/dA)*100)+'% jarak (1 blok ≈ 25 m).';
+var rmode='k';function drawR(){var gb=grid.getBoundingClientRect();if(!gb.width)return;var cw=gb.width/C,ch=gb.height/Rw,svg=$('#rsvg');
+  function P(c){return [(c.x+.5)*cw,(c.y+.5)*ch];}
+  var Lp=rmode==='k'?R:rmode==='a'?all:[],d='';Lp.forEach(function(c,i){var p=P(c);if(!i){d+='M'+p[0]+' '+p[1];return;}var q=P(Lp[i-1]);d+=' L'+p[0]+' '+q[1]+' L'+p[0]+' '+p[1];});
+  svg.setAttribute('viewBox','0 0 '+gb.width+' '+gb.height);var g0=P(gate);
+  svg.innerHTML=Lp.length?'<path d="'+d+'" fill="none" stroke="var(--ink)" stroke-width="3" stroke-dasharray="7 5" stroke-linecap="round" stroke-linejoin="round" opacity=".85"/><circle cx="'+g0[0]+'" cy="'+g0[1]+'" r="7" fill="var(--paper)" stroke="var(--ink)" stroke-width="3"/>':'';}
+$$('.seg button').forEach(function(b){b.onclick=function(){rmode=b.getAttribute('data-r');$$('.seg button').forEach(function(o){o.setAttribute('aria-pressed',o===b?'true':'false');});drawR();};});
+addEventListener('resize',drawR);requestAnimationFrame(drawR);
+
+/* =================== HARGA BERSIH =================== */
+function rp(n){return 'Rp'+Math.round(n).toLocaleString('id-ID');}
+function hc(){var h=+$('#hH').value||0,s=+$('#hS').value||0,j=+$('#hJ').value||0,o=+$('#hO').value||0,net=h*(1-s/100)-j*o;
+  $('#hR').textContent=rp(net)+'/kg';$('#hX').textContent='Potongan sortasi '+rp(h*s/100)+' + ongkos angkut '+rp(j*o)+' per kg. Untuk 1 ton TBS: '+rp(net*1000)+'.';}
+['hH','hS','hJ','hO'].forEach(function(k){$('#'+k).addEventListener('input',hc);});hc();
+
+/* =================== POLA TANAM =================== */
+function plant(){var m=+$('#pS').value,Lh=+$('#pL').value||0,s=36*m/9,h=s*Math.sqrt(3)/2,out='';
+  for(var r=0;40+r*h<230;r++)for(var k=0;;k++){var px=40+k*s+(r%2?s/2:0),py=40+r*h;if(px>300)break;
+    var wet=Math.pow((px-238)/70,2)+Math.pow((py-172)/48,2)<1;
+    out+='<circle cx="'+px.toFixed(1)+'" cy="'+py.toFixed(1)+'" r="'+(wet?3.2:4.5)+'" fill="'+(wet?'none':'var(--palm2)')+'" stroke="'+(wet?'#3b82c4':'none')+'" stroke-width="1.5"/>';}
+  $('#pts').innerHTML=out;$('#tri').setAttribute('d','M40 40 L'+(40+s)+' 40 L'+(40+s/2)+' '+(40+h).toFixed(1)+' Z');
+  var tri=10000/(m*m*Math.sqrt(3)/2),sq=10000/(m*m),dm=m%1?1:0;
+  $('#tS').textContent=f(m,dm)+' m';$('#fS').textContent=f(m,dm)+' m';$('#fR').textContent=f(m*Math.sqrt(3)/2,1)+' m';$('#fN').textContent='±'+Math.round(tri);
+  $('#pG').textContent='Lahan '+f(Lh,Lh%1?1:0)+' ha: ±'+Math.round(tri*Lh).toLocaleString('id-ID')+' pokok pola segitiga, dibanding ±'+Math.round(sq*Lh).toLocaleString('id-ID')+' pokok pola persegi. '+Math.round((tri/sq-1)*100)+'% lebih banyak pokok dengan jarak antar pohon yang sama.';}
+['pL','pS'].forEach(function(k){$('#'+k).addEventListener('input',plant);});plant();
+})();
+</script>
+</body></html>
